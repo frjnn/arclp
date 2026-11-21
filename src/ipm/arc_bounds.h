@@ -5,15 +5,17 @@
 #include "arc_filter.h"
 #include "arc_search.h"
 
-typedef struct {
+typedef struct
+{
     double angle;
     arc_trig trig;
 } arc_bound;
 
-typedef struct {
-    arc_bound minus;   /* components whose second derivative falls with sigma */
-    arc_bound plus;    /* components whose second derivative grows with sigma */
-    arc_bound all;     /* every component                                    */
+typedef struct
+{
+    arc_bound minus; /* components whose second derivative falls with sigma */
+    arc_bound plus;  /* components whose second derivative grows with sigma */
+    arc_bound all;   /* every component                                    */
 } arc_bounds;
 
 arc_bounds arc_bounds_at(const arc_search_rule *r, const arc_ipm *ipm,

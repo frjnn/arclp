@@ -14,7 +14,7 @@ static const double HALF_PI = 1.57079632679489661923;
 static const double RHO = 0.1;
 static const double SIGMA_MIN = 1e-6;
 static const double SIGMA_MAX = 0.3;
-static const double SIGMA_WIDTH = 1e-4;   /* sqrt(1e-8) in arcLP.m */
+static const double SIGMA_WIDTH = 1e-4; /* sqrt(1e-8) in arcLP.m */
 static const double ANGLE_SHRINK = 0.999;
 static const double ANGLE_CAP_FRACTION = 0.99;
 static const double SMALLEST_ANGLE = 1e-300;
@@ -25,17 +25,17 @@ static double reduce_for_mu(const arc_search_rule *r, const arc_ipm *ipm,
 {
     const int n = ipm->n;
     const double a1 = arc_dot(n, r->dot.x, r->dot.s) / n;
-    const double a2 = (arc_dot(n, r->dot.x, r->q.s)
-                       + arc_dot(n, r->dot.s, r->q.x)) / n;
-    const double a3 = (arc_dot(n, r->dot.x, r->p.s)
-                       + arc_dot(n, r->dot.s, r->p.x)) / n;
+    const double a2 = (arc_dot(n, r->dot.x, r->q.s) + arc_dot(n, r->dot.s, r->q.x)) / n;
+    const double a3 = (arc_dot(n, r->dot.x, r->p.s) + arc_dot(n, r->dot.s, r->p.x)) / n;
     const double mu = ipm->mu;
-    while (alpha > SMALLEST_ANGLE) {
+    while (alpha > SMALLEST_ANGLE)
+    {
         const double sa = sin(alpha);
         const double ca = 1.0 - cos(alpha);
         const double mu_alpha =
             mu * (1.0 - sa) + ca * ((mu - a3 * sa) * sigma - a1 * ca - a2 * sa);
-        if (mu > mu_alpha) {
+        if (mu > mu_alpha)
+        {
             break;
         }
         alpha *= 0.5;
@@ -52,12 +52,16 @@ arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
     double sigma = lower;
     const arc_bound quarter = {HALF_PI, {1.0, 0.0, 1.0}};
     arc_bounds b = {quarter, quarter, quarter};
-    while (upper - lower > SIGMA_WIDTH) {
+    while (upper - lower > SIGMA_WIDTH)
+    {
         sigma = lower + 0.5 * (upper - lower);
         b = arc_bounds_at(r, ipm, sigma, phi, psi);
-        if (b.minus.angle > b.plus.angle) {
+        if (b.minus.angle > b.plus.angle)
+        {
             lower = sigma;
-        } else {
+        }
+        else
+        {
             upper = sigma;
         }
     }
@@ -65,6 +69,7 @@ arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
                             b.all.angle);
     alpha = reduce_for_mu(r, ipm, alpha, sigma);
     const arc_angle result = {arc_fmin(ANGLE_SHRINK * alpha,
-                                         ANGLE_CAP_FRACTION * HALF_PI), sigma};
+                                       ANGLE_CAP_FRACTION * HALF_PI),
+                              sigma};
     return result;
 }

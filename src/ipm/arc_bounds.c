@@ -12,7 +12,8 @@ static const double HALF_PI = 1.57079632679489661923;
 
 static inline void lower(arc_bound *b, double angle)
 {
-    if (angle < b->angle) {
+    if (angle < b->angle)
+    {
         b->angle = angle;
         b->trig = arc_trig_of(angle);
     }
@@ -22,16 +23,21 @@ static inline void lower(arc_bound *b, double angle)
 static inline void consider(arc_bounds *b, double gap, double v1, double v2,
                             double dp)
 {
-    arc_bound *relevant = dp < 0.0 ? &b->minus
-                        : dp > 0.0 ? &b->plus : &b->all;
-    if (!arc_angle_may_be_below(gap, v1, v2, relevant->trig)) {
+    arc_bound *relevant = dp < 0.0   ? &b->minus
+                          : dp > 0.0 ? &b->plus
+                                     : &b->all;
+    if (!arc_angle_may_be_below(gap, v1, v2, relevant->trig))
+    {
         return;
     }
     const double angle = arc_component_angle(gap, v1, v2);
     lower(&b->all, angle);
-    if (dp < 0.0) {
+    if (dp < 0.0)
+    {
         lower(&b->minus, angle);
-    } else if (dp > 0.0) {
+    }
+    else if (dp > 0.0)
+    {
         lower(&b->plus, angle);
     }
 }
@@ -41,7 +47,8 @@ arc_bounds arc_bounds_at(const arc_search_rule *r, const arc_ipm *ipm,
 {
     const arc_bound quarter = {HALF_PI, {1.0, 0.0, 1.0}};
     arc_bounds b = {quarter, quarter, quarter};
-    for (int i = 0; i < ipm->n; i++) {
+    for (int i = 0; i < ipm->n; i++)
+    {
         consider(&b, ipm->x[i] - phi, r->dot.x[i],
                  sigma * r->p.x[i] + r->q.x[i], r->p.x[i]);
         consider(&b, ipm->s[i] - psi, r->dot.s[i],

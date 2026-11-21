@@ -9,7 +9,8 @@
 #include "sparse/csc.h"
 #include "ps_matrix.h"
 
-typedef enum {
+typedef enum
+{
     ARC_PRESOLVE_REDUCED,
     ARC_PRESOLVE_INFEASIBLE,
     ARC_PRESOLVE_UNBOUNDED,
@@ -17,30 +18,32 @@ typedef enum {
 } arc_presolve_status;
 
 /* x_p = rhs - sum coef_k x_{col_k}: a variable eliminated by rule 9. */
-typedef struct {
+typedef struct
+{
     int *pivot;
     double *rhs;
-    int *start;        /* count + 1 offsets into term_col / term_coef */
+    int *start; /* count + 1 offsets into term_col / term_coef */
     int *term_col;
     double *term_coef;
     int count, capacity, terms, term_capacity;
 } arc_substitutions;
 
-typedef struct {
+typedef struct
+{
     ps_matrix a;
-    double *b, *c;          /* working right-hand side and costs     */
-    double *fixed_x;        /* values of the eliminated variables    */
+    double *b, *c;   /* working right-hand side and costs     */
+    double *fixed_x; /* values of the eliminated variables    */
     arc_substitutions subs;
-    int *scatter;           /* n, -1 outside use                     */
-    int *row_cols;          /* n, scratch for one row                */
+    int *scatter;  /* n, -1 outside use                     */
+    int *row_cols; /* n, scratch for one row                */
     double *row_vals;
-    double abs_ratio;       /* max |a_ij| / min |a_ij| of the input  */
+    double abs_ratio; /* max |a_ij| / min |a_ij| of the input  */
     /* Reduced problem */
-    arc_csc reduced;         /* view of the storage below            */
+    arc_csc reduced; /* view of the storage below            */
     int *reduced_p, *reduced_i;
     double *reduced_x;
     double *reduced_b, *reduced_c;
-    int *reduced_col;       /* original column of each reduced one   */
+    int *reduced_col; /* original column of each reduced one   */
 } arc_presolve;
 
 arc_presolve_status arc_presolve_run(arc_presolve *ps, const arc_csc *a,

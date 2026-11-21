@@ -11,23 +11,26 @@
 
 #include "step_rule.h"
 
-typedef struct {
+typedef struct
+{
     double *x, *y, *s;
 } arc_direction;
 
-typedef struct {
-    arc_step_rule base;       /* must stay first */
+typedef struct
+{
+    arc_step_rule base; /* must stay first */
     int m, n;
-    arc_direction dot;        /* first derivative of the arc            */
-    arc_direction p, q;       /* second derivative is sigma p + q       */
-    double *work;             /* n scratch                              */
-    double nu;                /* nu_k = prod (1 - sin alpha_j)          */
-    double alpha;             /* last accepted angle                    */
+    arc_direction dot;  /* first derivative of the arc            */
+    arc_direction p, q; /* second derivative is sigma p + q       */
+    double *work;       /* n scratch                              */
+    double nu;          /* nu_k = prod (1 - sin alpha_j)          */
+    double alpha;       /* last accepted angle                    */
     double sigma;
     arc_arena arena;
 } arc_search_rule;
 
-typedef struct {
+typedef struct
+{
     double alpha;
     double sigma;
 } arc_angle;
@@ -42,6 +45,5 @@ arc_angle arc_search_angle(const arc_search_rule *rule, const arc_ipm *ipm);
  *     gap - v1 sin(a) + v2 (1 - cos(a)) >= 0,
  * for gap > 0 (the five cases of arcLP.m). */
 double arc_component_angle(double gap, double v1, double v2);
-
 
 #endif

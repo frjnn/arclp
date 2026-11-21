@@ -10,7 +10,8 @@
 
 typedef struct arc_step_rule arc_step_rule;
 
-typedef struct {
+typedef struct
+{
     /* Replaces (x, y, s) by the next iterate; returns 0 on success. */
     int (*step)(arc_step_rule *self, arc_ipm *ipm);
     /* Rule-specific stagnation test, evaluated after the residual update. */
@@ -18,7 +19,8 @@ typedef struct {
     void (*destroy)(arc_step_rule *self);
 } arc_step_rule_ops;
 
-struct arc_step_rule {
+struct arc_step_rule
+{
     const arc_step_rule_ops *ops;
 };
 
@@ -30,7 +32,8 @@ arc_step_rule *arc_mehrotra_rule_create(int m, int n);
 
 static inline void arc_step_rule_destroy(arc_step_rule *rule)
 {
-    if (rule != 0) {
+    if (rule != 0)
+    {
         rule->ops->destroy(rule);
     }
 }

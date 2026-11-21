@@ -4,15 +4,15 @@
 #define ARCLP_EXPORT_H
 
 #if defined(_WIN32) && defined(ARCLP_SHARED)
-#  if defined(ARCLP_BUILDING)
-#    define ARCLP_API __declspec(dllexport)
-#  else
-#    define ARCLP_API __declspec(dllimport)
-#  endif
-#elif defined(__GNUC__) || defined(__clang__)
-#  define ARCLP_API __attribute__((visibility("default")))
+#if defined(ARCLP_BUILDING)
+#define ARCLP_API __declspec(dllexport)
 #else
-#  define ARCLP_API
+#define ARCLP_API __declspec(dllimport)
+#endif
+#elif defined(__GNUC__) || defined(__clang__)
+#define ARCLP_API __attribute__((visibility("default")))
+#else
+#define ARCLP_API
 #endif
 
 #endif

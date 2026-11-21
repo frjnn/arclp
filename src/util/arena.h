@@ -9,8 +9,9 @@
 
 #include <stddef.h>
 
-typedef struct {
-    unsigned char *base;   /* NULL while measuring */
+typedef struct
+{
+    unsigned char *base; /* NULL while measuring */
     size_t capacity;
     size_t used;
 } arc_arena;

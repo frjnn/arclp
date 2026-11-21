@@ -3,7 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { ARENA_ALIGNMENT = 64 };
+enum
+{
+    ARENA_ALIGNMENT = 64
+};
 
 static size_t round_up(size_t bytes)
 {
@@ -21,7 +24,8 @@ int arc_arena_commit(arc_arena *arena)
 {
     size_t bytes = arena->used > 0 ? arena->used : ARENA_ALIGNMENT;
     arena->base = aligned_alloc(ARENA_ALIGNMENT, round_up(bytes));
-    if (arena->base == NULL) {
+    if (arena->base == NULL)
+    {
         return -1;
     }
     memset(arena->base, 0, round_up(bytes));
@@ -34,7 +38,8 @@ void *arc_arena_take(arc_arena *arena, size_t count, size_t size)
 {
     size_t bytes = round_up(count * size);
     void *block = NULL;
-    if (arena->base != NULL && arena->used + bytes <= arena->capacity) {
+    if (arena->base != NULL && arena->used + bytes <= arena->capacity)
+    {
         block = arena->base + arena->used;
     }
     arena->used += bytes;

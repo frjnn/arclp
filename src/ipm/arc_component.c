@@ -15,17 +15,21 @@ static const double PI = 3.14159265358979323846;
 static double crossing(double gap, double v1, double v2)
 {
     const double target = gap + v2;
-    if (v1 == 0.0) {
+    if (v1 == 0.0)
+    {
         return target < 0.0 ? acos(target / v2) : 0.5 * PI;
     }
-    if (v2 == 0.0) {
+    if (v2 == 0.0)
+    {
         return v1 > gap ? asin(gap / v1) : 0.5 * PI;
     }
-    const double r = sqrt(v1 * v1 + v2 * v2);   /* as in arcLP.m */
-    if (v1 > 0.0 && target < r) {
+    const double r = sqrt(v1 * v1 + v2 * v2); /* as in arcLP.m */
+    if (v1 > 0.0 && target < r)
+    {
         return asin(target / r) - asin(v2 / r);
     }
-    if (v1 < 0.0 && v2 < 0.0 && target < 0.0) {
+    if (v1 < 0.0 && v2 < 0.0 && target < 0.0)
+    {
         return PI - asin(-target / r) - asin(-v2 / r);
     }
     return 0.5 * PI;

@@ -33,9 +33,11 @@ void arc_gemm_nt(int m, int n, int k, double alpha, const double *a, int lda,
 void arc_gemm_nn(int m, int n, int k, double alpha, const double *a, int lda,
                  const double *b, int ldb, double beta, double *c, int ldc)
 {
-    if (by_columns(n, (double)m * k)) {
+    if (by_columns(n, (double)m * k))
+    {
         arc_blas_threads_for((double)m * k);
-        for (int col = 0; col < n; col++) {
+        for (int col = 0; col < n; col++)
+        {
             cblas_dgemv(CblasColMajor, CblasNoTrans, m, k, alpha, a, lda,
                         b + (long)col * ldb, 1, beta, c + (long)col * ldc, 1);
         }
@@ -49,9 +51,11 @@ void arc_gemm_nn(int m, int n, int k, double alpha, const double *a, int lda,
 void arc_gemm_tn(int m, int n, int k, double alpha, const double *a, int lda,
                  const double *b, int ldb, double beta, double *c, int ldc)
 {
-    if (by_columns(n, (double)m * k)) {
+    if (by_columns(n, (double)m * k))
+    {
         arc_blas_threads_for((double)m * k);
-        for (int col = 0; col < n; col++) {
+        for (int col = 0; col < n; col++)
+        {
             cblas_dgemv(CblasColMajor, CblasTrans, k, m, alpha, a, lda,
                         b + (long)col * ldb, 1, beta, c + (long)col * ldc, 1);
         }
@@ -81,9 +85,11 @@ void arc_trsm_right_lt(int m, int n, const double *l, int ldl, double *b,
 static void trsm_left(enum CBLAS_TRANSPOSE trans, int n, int nrhs,
                       const double *l, int ldl, double *x, int ldx)
 {
-    if (by_columns(nrhs, (double)n * n)) {
+    if (by_columns(nrhs, (double)n * n))
+    {
         arc_blas_threads_for((double)n * n);
-        for (int r = 0; r < nrhs; r++) {
+        for (int r = 0; r < nrhs; r++)
+        {
             cblas_dtrsv(CblasColMajor, CblasLower, trans, CblasNonUnit, n, l,
                         ldl, x + (long)r * ldx, 1);
         }

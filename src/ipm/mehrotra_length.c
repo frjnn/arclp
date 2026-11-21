@@ -27,7 +27,8 @@ static double lowest_at(int len, const double *v, const double *d,
                         const double *dd, double a)
 {
     double lowest = INFINITY;
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
+    {
         lowest = arc_fmin(lowest, moved(v[i], d[i], dd[i], a));
     }
     return lowest;
@@ -38,9 +39,11 @@ static double boundary(int len, const double *v, const double *d,
                        const double *dd)
 {
     double limit = INFINITY;
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
+    {
         const double fall = d[i] - dd[i];
-        if (fall > 0.0) {
+        if (fall > 0.0)
+        {
             limit = arc_fmin(limit, v[i] / fall);
         }
     }
@@ -50,13 +53,15 @@ static double boundary(int len, const double *v, const double *d,
 static int feasible(int len, const double *v, const double *d,
                     const double *dd, double a, double limit)
 {
-    if (limit == INFINITY || fabs(a - limit) > BOUNDARY_FUZZ * limit) {
+    if (limit == INFINITY || fabs(a - limit) > BOUNDARY_FUZZ * limit)
+    {
         return a < limit;
     }
     return lowest_at(len, v, d, dd, a) > 0.0;
 }
 
-typedef struct {
+typedef struct
+{
     double step, shorter, longer;
 } three_minima;
 
@@ -65,7 +70,8 @@ static three_minima lowest_at_three(int len, const double *v, const double *d,
                                     const double *dd, three_minima a)
 {
     three_minima low = {INFINITY, INFINITY, INFINITY};
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
+    {
         low.step = arc_fmin(low.step, moved(v[i], d[i], dd[i], a.step));
         low.shorter =
             arc_fmin(low.shorter, moved(v[i], d[i], dd[i], a.shorter));
@@ -80,11 +86,15 @@ double mehrotra_step_length(int len, const double *v, const double *d,
     const double limit = boundary(len, v, d, dd);
     double lo = 0.0;
     double hi = 1.0;
-    while (hi - lo > BISECTION_WIDTH) {
+    while (hi - lo > BISECTION_WIDTH)
+    {
         const double mid = 0.5 * (lo + hi);
-        if (feasible(len, v, d, dd, mid, limit)) {
+        if (feasible(len, v, d, dd, mid, limit))
+        {
             lo = mid;
-        } else {
+        }
+        else
+        {
             hi = mid;
         }
     }
@@ -93,10 +103,12 @@ double mehrotra_step_length(int len, const double *v, const double *d,
                                 arc_fmin((1.0 + shrink) * lo, 1.0)};
     const three_minima low = lowest_at_three(len, v, d, dd, steps);
     double step = steps.step;
-    if (low.shorter > low.step) {
+    if (low.shorter > low.step)
+    {
         step = steps.shorter;
     }
-    if (low.longer > arc_fmin(low.step, low.shorter)) {
+    if (low.longer > arc_fmin(low.step, low.shorter))
+    {
         step = steps.longer;
     }
     return step;

@@ -12,8 +12,9 @@
 #include <math.h>
 
 /* Precomputed trigonometry of a threshold angle t. */
-typedef struct {
-    double sin, cos, versine;   /* versine = 1 - cos(t) */
+typedef struct
+{
+    double sin, cos, versine; /* versine = 1 - cos(t) */
 } arc_trig;
 
 static inline arc_trig arc_trig_of(double t)
@@ -27,10 +28,12 @@ static inline int arc_angle_may_be_below(double gap, double v1, double v2,
                                          arc_trig t)
 {
     const double margin = 1e-9 * (gap + fabs(v1) + fabs(v2));
-    if (gap - v1 * t.sin + v2 * t.versine < margin) {
+    if (gap - v1 * t.sin + v2 * t.versine < margin)
+    {
         return 1;
     }
-    if (v1 > 0.0 && v2 > 0.0 && v1 * t.cos < v2 * t.sin) {
+    if (v1 > 0.0 && v2 > 0.0 && v1 * t.cos < v2 * t.sin)
+    {
         return gap + v2 < sqrt(v1 * v1 + v2 * v2) + margin;
     }
     return 0;

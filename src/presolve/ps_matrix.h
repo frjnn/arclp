@@ -9,18 +9,20 @@
 
 #include "sparse/csc.h"
 
-typedef struct {
+typedef struct
+{
     int row, col;
     int next_in_row, next_in_col;
     double value;
 } ps_entry;
 
-typedef struct {
+typedef struct
+{
     int m, n;
     ps_entry *e;
     int count, capacity;
     int *row_head, *col_head;
-    int *row_len, *col_len;          /* live entries per row / column */
+    int *row_len, *col_len; /* live entries per row / column */
     unsigned char *row_alive, *col_alive;
 } ps_matrix;
 

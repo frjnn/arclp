@@ -4,12 +4,13 @@
 #ifndef ARC_CSC_H
 #define ARC_CSC_H
 
-typedef struct {
+typedef struct
+{
     int m;
     int n;
-    const int *p;      /* n + 1 column pointers */
-    const int *i;      /* row indices           */
-    const double *x;   /* values                */
+    const int *p;    /* n + 1 column pointers */
+    const int *i;    /* row indices           */
+    const double *x; /* values                */
 } arc_csc;
 
 /* y := A x */

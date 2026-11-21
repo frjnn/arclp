@@ -12,11 +12,12 @@ static void layout(arc_arena *ar, arc_search_rule *r)
     const size_t n = (size_t)r->n;
     double *ys = arc_arena_take(ar, 2 * m, sizeof(double));
     r->dot.y = ys;
-    r->p.y = ys != NULL ? ys + m : NULL;    /* adjacent: solved together */
+    r->p.y = ys != NULL ? ys + m : NULL; /* adjacent: solved together */
     r->q.y = arc_arena_take(ar, m, sizeof(double));
     double **vectors[] = {&r->dot.x, &r->dot.s, &r->p.x, &r->p.s, &r->q.x,
                           &r->q.s, &r->work};
-    for (size_t k = 0; k < sizeof(vectors) / sizeof(*vectors); k++) {
+    for (size_t k = 0; k < sizeof(vectors) / sizeof(*vectors); k++)
+    {
         *vectors[k] = arc_arena_take(ar, n, sizeof(double));
     }
 }
@@ -27,7 +28,8 @@ static void move(int len, double *v, const double *dot, const double *p,
 {
     const double sa = sin(a.alpha);
     const double ca = 1.0 - cos(a.alpha);
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
+    {
         v[i] += -dot[i] * sa + (a.sigma * p[i] + q[i]) * ca;
     }
 }
@@ -64,7 +66,8 @@ static const arc_step_rule_ops ARC_OPS = {arc_step, arc_stalled, arc_destroy};
 arc_step_rule *arc_search_rule_create(int m, int n)
 {
     arc_search_rule *r = calloc(1, sizeof(*r));
-    if (r == NULL) {
+    if (r == NULL)
+    {
         return NULL;
     }
     r->base.ops = &ARC_OPS;
@@ -73,7 +76,8 @@ arc_step_rule *arc_search_rule_create(int m, int n)
     r->nu = 1.0;
     arc_arena_measure(&r->arena);
     layout(&r->arena, r);
-    if (arc_arena_commit(&r->arena) != 0) {
+    if (arc_arena_commit(&r->arena) != 0)
+    {
         free(r);
         return NULL;
     }

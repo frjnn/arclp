@@ -17,17 +17,19 @@
 static const double PARALLEL_WORK = 1e7;
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-static int sessions;                     /* open brackets, all threads   */
-static enum BLAS_THREADING saved_mode;   /* caller's mode, owner only    */
-static _Thread_local int owner;          /* this thread may set the mode */
-static _Thread_local int multi = -1;     /* mode it set; -1: none        */
+static int sessions;                   /* open brackets, all threads   */
+static enum BLAS_THREADING saved_mode; /* caller's mode, owner only    */
+static _Thread_local int owner;        /* this thread may set the mode */
+static _Thread_local int multi = -1;   /* mode it set; -1: none        */
 
 void arc_dense_begin(void)
 {
     pthread_mutex_lock(&lock);
     owner = sessions++ == 0;
-    if (owner) {
-        if (__builtin_available(macOS 15.0, *)) {
+    if (owner)
+    {
+        if (__builtin_available(macOS 15.0, *))
+        {
             saved_mode = BLASGetThreading();
         }
     }
@@ -38,8 +40,10 @@ void arc_dense_begin(void)
 void arc_dense_end(void)
 {
     pthread_mutex_lock(&lock);
-    if (owner && multi != -1) {
-        if (__builtin_available(macOS 15.0, *)) {
+    if (owner && multi != -1)
+    {
+        if (__builtin_available(macOS 15.0, *))
+        {
             BLASSetThreading(saved_mode);
         }
     }
@@ -52,10 +56,12 @@ void arc_dense_end(void)
 void arc_blas_threads_for(double work)
 {
     const int want = work >= PARALLEL_WORK;
-    if (!owner || want == multi) {
+    if (!owner || want == multi)
+    {
         return;
     }
-    if (__builtin_available(macOS 15.0, *)) {
+    if (__builtin_available(macOS 15.0, *))
+    {
         BLASSetThreading(want ? BLAS_THREADING_MULTI_THREADED
                               : BLAS_THREADING_SINGLE_THREADED);
     }

@@ -8,12 +8,14 @@
 
 typedef struct arc_normal_solver arc_normal_solver;
 
-typedef struct {
+typedef struct
+{
     long factor_nonzeros;
-    int tiny_pivots;      /* pivots replaced during the last factorization */
+    int tiny_pivots; /* pivots replaced during the last factorization */
 } arc_normal_stats;
 
-typedef struct {
+typedef struct
+{
     /* Factorizes A diag(d) A'; returns 0 on success. */
     int (*factor)(arc_normal_solver *self, const double *d);
     /* Overwrites the m-by-nrhs column-major block r with (A D A')^{-1} r. */
@@ -22,7 +24,8 @@ typedef struct {
     void (*destroy)(arc_normal_solver *self);
 } arc_normal_solver_ops;
 
-struct arc_normal_solver {
+struct arc_normal_solver
+{
     const arc_normal_solver_ops *ops;
 };
 
@@ -38,7 +41,8 @@ static inline void arc_normal_solve(arc_normal_solver *s, double *r, int nrhs)
 
 static inline void arc_normal_destroy(arc_normal_solver *s)
 {
-    if (s != 0) {
+    if (s != 0)
+    {
         s->ops->destroy(s);
     }
 }

@@ -13,10 +13,12 @@ static void layout(arc_arena *ar, arc_ipm *ipm)
                             &ipm->work_n[1]};
     double **vectors_m[] = {&ipm->y, &ipm->y_old, &ipm->rb, &ipm->work_m[0],
                             &ipm->work_m[1]};
-    for (size_t k = 0; k < sizeof(vectors_n) / sizeof(*vectors_n); k++) {
+    for (size_t k = 0; k < sizeof(vectors_n) / sizeof(*vectors_n); k++)
+    {
         *vectors_n[k] = arc_arena_take(ar, n, sizeof(double));
     }
-    for (size_t k = 0; k < sizeof(vectors_m) / sizeof(*vectors_m); k++) {
+    for (size_t k = 0; k < sizeof(vectors_m) / sizeof(*vectors_m); k++)
+    {
         *vectors_m[k] = arc_arena_take(ar, m, sizeof(double));
     }
 }
@@ -35,7 +37,8 @@ int arc_ipm_init(arc_ipm *ipm, const arc_csc *a, const double *b,
     ipm->norm_c = arc_norm2(ipm->n, c);
     arc_arena_measure(&ipm->arena);
     layout(&ipm->arena, ipm);
-    if (arc_arena_commit(&ipm->arena) != 0) {
+    if (arc_arena_commit(&ipm->arena) != 0)
+    {
         return -1;
     }
     layout(&ipm->arena, ipm);
@@ -53,13 +56,16 @@ void arc_ipm_residuals(arc_ipm *ipm)
     const arc_csc *a = ipm->a;
     double *rb = ipm->rb;
     double gap = 0.0;
-    for (int i = 0; i < ipm->m; i++) {
+    for (int i = 0; i < ipm->m; i++)
+    {
         rb[i] = 0.0;
     }
-    for (int j = 0; j < ipm->n; j++) {
+    for (int j = 0; j < ipm->n; j++)
+    {
         const double xj = ipm->x[j];
         double aty = 0.0;
-        for (int k = a->p[j]; k < a->p[j + 1]; k++) {
+        for (int k = a->p[j]; k < a->p[j + 1]; k++)
+        {
             rb[a->i[k]] += a->x[k] * xj;
             aty += a->x[k] * ipm->y[a->i[k]];
         }
