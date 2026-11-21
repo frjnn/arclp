@@ -3,7 +3,7 @@
 A C11 implementation of Yaguang Yang's **arcLP**, the arc-search infeasible
 interior-point method of
 
-> Y. Yang, *Two computationally efficient polynomial-iteration infeasible interior-point algorithms for linear programming*, Numerical Algorithms 79 (2018) 957–992 — Algorithm 5.1 with the step selection of Algorithm 6.1,
+> Y. Yang, *Two computationally efficient polynomial-iteration infeasible interior-point algorithms for linear programming*, Numerical Algorithms 79 (2018) 957–992
 
 It solves
 
