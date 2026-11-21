@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, preset: release}
+          - {os: ubuntu-latest, preset: portable}
+          - {os: ubuntu-latest, preset: sanitize}
+          - {os: macos-latest, preset: release}
+          - {os: macos-latest, preset: shared}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev zlib1g-dev
+      - name: Fetch Netlib data
+        run: scripts/fetch_netlib.sh
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }} -DARCLP_NATIVE=OFF -DARCLP_WERROR=ON
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }} -j 4
+      - name: Test
+        run: ctest --preset ${{ matrix.preset }}

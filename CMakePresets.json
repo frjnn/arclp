@@ -1,0 +1,56 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {"major": 3, "minor": 21, "patch": 0},
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "Release (native, system BLAS)",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug", "ARCLP_WERROR": "ON"}
+    },
+    {
+      "name": "sanitize",
+      "displayName": "Debug with AddressSanitizer and UBSan",
+      "inherits": "debug",
+      "binaryDir": "${sourceDir}/build/sanitize",
+      "cacheVariables": {"ARCLP_SANITIZE": "address,undefined"}
+    },
+    {
+      "name": "portable",
+      "displayName": "Release without BLAS or -march=native",
+      "binaryDir": "${sourceDir}/build/portable",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ARCLP_BLAS": "none",
+        "ARCLP_NATIVE": "OFF"
+      }
+    },
+    {
+      "name": "shared",
+      "displayName": "Release, shared library",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/shared",
+      "cacheVariables": {"BUILD_SHARED_LIBS": "ON"}
+    }
+  ],
+  "buildPresets": [
+    {"name": "release", "configurePreset": "release"},
+    {"name": "debug", "configurePreset": "debug"},
+    {"name": "sanitize", "configurePreset": "sanitize"},
+    {"name": "portable", "configurePreset": "portable"},
+    {"name": "shared", "configurePreset": "shared"}
+  ],
+  "testPresets": [
+    {"name": "release", "configurePreset": "release", "output": {"outputOnFailure": true}},
+    {"name": "debug", "configurePreset": "debug", "output": {"outputOnFailure": true}},
+    {"name": "sanitize", "configurePreset": "sanitize", "output": {"outputOnFailure": true}},
+    {"name": "portable", "configurePreset": "portable", "output": {"outputOnFailure": true}},
+    {"name": "shared", "configurePreset": "shared", "output": {"outputOnFailure": true}}
+  ]
+}

@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+if("@ARCLP_BLAS_BACKEND@" STREQUAL "cblas")
+    find_dependency(BLAS)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/arclpTargets.cmake")
+check_required_components(arclp)
