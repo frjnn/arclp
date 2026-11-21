@@ -4,6 +4,9 @@
 set(ARCLP_BLAS_LIBRARIES "")
 set(ARCLP_BLAS_INCLUDE_DIRS "")
 set(_arclp_backend "${ARCLP_BLAS}")
+# On macOS, look for a CBLAS header outside the SDK frameworks first, so an
+# explicitly chosen OpenBLAS is not shadowed by vecLib's legacy cblas.h.
+set(CMAKE_FIND_FRAMEWORK LAST)
 
 if(_arclp_backend STREQUAL "auto")
     if(APPLE)

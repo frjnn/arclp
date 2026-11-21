@@ -9,12 +9,12 @@
 #include "blas_threading.h"
 #include "dense.h"
 
-static const double PARALLEL_WORK = 1e7;
-
-#if defined(__APPLE__)
+#if defined(ARCLP_USE_ACCELERATE)
 #define ACCELERATE_NEW_LAPACK
 #include <Accelerate/Accelerate.h>
 #include <pthread.h>
+
+static const double PARALLEL_WORK = 1e7;
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static int sessions;                     /* open brackets, all threads   */

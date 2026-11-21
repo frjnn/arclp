@@ -50,10 +50,11 @@ target_include_directories(arclp_objects
     PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${ARCLP_BLAS_INCLUDE_DIRS})
+        ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(arclp_objects SYSTEM PRIVATE ${ARCLP_BLAS_INCLUDE_DIRS})
 target_compile_definitions(arclp_objects PRIVATE ARCLP_BUILDING
-    $<$<BOOL:${BUILD_SHARED_LIBS}>:ARCLP_SHARED>)
+    $<$<BOOL:${BUILD_SHARED_LIBS}>:ARCLP_SHARED>
+    $<$<STREQUAL:${ARCLP_BLAS_BACKEND},accelerate>:ARCLP_USE_ACCELERATE>)
 target_link_libraries(arclp_objects PRIVATE arclp_compiler_options)
 
 find_library(ARCLP_LIBM m)

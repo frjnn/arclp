@@ -7,7 +7,7 @@
 #include "blas_threading.h"
 #include "dense.h"
 
-#ifdef __APPLE__
+#if defined(ARCLP_USE_ACCELERATE)
 #define ACCELERATE_NEW_LAPACK
 #include <Accelerate/Accelerate.h>
 #else
