@@ -46,7 +46,7 @@ ctest --preset release             # unit + integration tests
 | `ARCLP_NETLIB_DIR` | `data/arcLP` | Where tests and the `benchmark` target look for the `lp_*.mat` files. |
 | `BUILD_SHARED_LIBS` | `OFF` | Standard CMake switch: shared (`.dylib`/`.so`) instead of static library. |
 
-\* `ON` when arclp is the top-level project, `OFF` when another project
+\* `ON` when `arclp` is the top-level project, `OFF` when another project
 includes it with `add_subdirectory`.
 
 `cmake -LH <build-dir>` lists every option with its current value.
