@@ -89,7 +89,7 @@ python3 scripts/benchmark_report.py build/release/netlib_results.csv
 
 Single problems or one method: `build/release/benchmarks/arclp_bench data/arcLP --problem qap15 --method arc`.
 
-On the 51 Netlib problems of Table 1 (Apple M2 Max):
+On the 51 Netlib problems of Table 1 from Yang 2018 (Apple M2 Max):
 
 | | solved (rel. obj. error < 1e-6) | iterations (paper) | time |
 |---|---|---|---|
