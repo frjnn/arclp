@@ -73,7 +73,8 @@ static int allocate(arc_symbolic *s, const arc_csc *a, const scratch *t)
 static int analyse(const arc_csc *a, const arc_relax_policy *policy,
                    arc_symbolic *s, const arc_graph *g, scratch *t)
 {
-    if (arc_order(g, t->perm, t->pinv, t->parent, t->count, t->work) != 0) {
+    if (arc_order(g, policy, t->perm, t->pinv, t->parent, t->count,
+                  t->work) != 0) {
         return -1;
     }
     s->nsuper = arc_partition_supernodes(a->m, t->parent, t->count, policy,

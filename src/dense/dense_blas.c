@@ -1,8 +1,8 @@
 /*
  * CBLAS implementation of the dense kernels.  Products and solves with a
  * few right-hand sides against a large block run one level-2 call per
- * column, which streams the block better than level 3 (EXPERIMENTS.md,
- * E23); everything else is level 3.
+ * column, which streams the block better than level 3; everything else
+ * is level 3.
  */
 #include "blas_threading.h"
 #include "dense.h"

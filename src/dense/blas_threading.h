@@ -1,4 +1,4 @@
-/* Threading policy of the CBLAS backend (see docs/EXPERIMENTS.md, E16). */
+/* Threading policy of the CBLAS backend. */
 #ifndef ARC_BLAS_THREADING_H
 #define ARC_BLAS_THREADING_H
 

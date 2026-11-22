@@ -1,11 +1,12 @@
 #include "numeric.h"
 
 #include "dense/dense.h"
+#include "util/parallel.h"
 
 #include <string.h>
 
 static const double HUGE_PIVOT = 1e128;
-/* Chosen on the Netlib benchmark; see docs/EXPERIMENTS.md (E1). */
+/* Chosen on the Netlib benchmark. */
 static const double DEFAULT_PIVOT_TOLERANCE = 1e-14;
 
 static void layout(arc_arena *ar, arc_numeric *num)
@@ -87,6 +88,17 @@ static void form_update(const arc_numeric *num, int d, update_rows u)
     }
 }
 
+/* Column jj of the update lands in its own column of the target block. */
+static inline void scatter_column(double *block, int nrows, const int *rel,
+                                  const double *update, update_rows u, int jj)
+{
+    double *target = block + (long)rel[jj] * nrows;
+    const double *src = update + (long)jj * u.n2;
+    for (int ii = jj; ii < u.n2; ii++) {
+        target[rel[ii]] -= src[ii];
+    }
+}
+
 /* block -= C, through the positions of d's rows inside supernode s. */
 static void scatter_update(arc_numeric *num, int d, int s, update_rows u,
                            double *block)
@@ -98,13 +110,8 @@ static void scatter_update(arc_numeric *num, int d, int s, update_rows u,
     for (int ii = 0; ii < u.n2; ii++) {
         rel[ii] = num->map[rows[ii]];
     }
-    for (int jj = 0; jj < u.n1; jj++) {
-        double *target = block + (long)rel[jj] * nrows;
-        const double *src = num->update + (long)jj * u.n2;
-        for (int ii = jj; ii < u.n2; ii++) {
-            target[rel[ii]] -= src[ii];
-        }
-    }
+    ARC_FOR(jj, u.n1, (long)u.n1 * u.n2,
+            scatter_column(block, nrows, rel, num->update, u, jj));
 }
 
 static void apply_update(arc_numeric *num, int d, int s, double *block)

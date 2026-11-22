@@ -15,7 +15,13 @@ with the reference's presolve, starting point, stopping rules and safeguards. Me
 
 ## Build and test
 
-Requirements: CMake >= 3.21, a C11 compiler, `zlib` (only for the `.mat` reader used by tests and benchmarks) and optionally a CBLAS (Accelerate on macOS, e.g. OpenBLAS on Linux).
+Requirements: CMake >= 3.21, a C11 compiler, `zlib` (only for the `.mat` reader used by tests and benchmarks), and optionally:
+
+- a CBLAS (Accelerate on macOS, e.g. OpenBLAS on Linux) for the dense kernels;
+- [METIS](https://github.com/KarypisLab/METIS), whose nested-dissection ordering replaces AMD when it gives a smaller factor (`brew install metis`, `apt install libmetis-dev`);
+- OpenMP for parallel loops (built into GCC; on macOS `brew install libomp`).
+
+Each optional piece is detected automatically and only changes speed: results are identical with or without OpenMP and for any thread count.
 
 ```sh
 scripts/fetch_netlib.sh            # optional: Netlib data for tests/benchmark
@@ -37,6 +43,8 @@ ctest --preset release             # unit + integration tests
 | option | default | what it controls |
 |---|---|---|
 | `ARCLP_BLAS` | `auto` | Backend of the dense matrix kernels: `accelerate` (Apple), `cblas` (any CBLAS, e.g. OpenBLAS), or `none` (portable C, no dependency, slower). `auto` picks Accelerate on macOS, else a CBLAS if found, else `none`. |
+| `ARCLP_METIS` | `auto` | `auto` uses METIS if found, `on` requires it, `off` never uses it. When used, analysis also tries nested dissection for factors above 10⁶ stored entries and keeps whichever ordering gives the smaller factor. |
+| `ARCLP_OPENMP` | `auto` | `auto` uses OpenMP if found, `on` requires it, `off` builds single-threaded. Parallel loops run only above a work threshold; thread count via `OMP_NUM_THREADS`. |
 | `ARCLP_NATIVE` | `ON` | Adds `-march=native` (optimizes for the build machine). Turn off for binaries that must run on other CPUs. |
 | `ARCLP_WERROR` | `OFF` | Treats compiler warnings as errors (on in the `debug` preset). |
 | `ARCLP_SANITIZE` | empty | Runtime checkers, comma-separated: e.g. `address,undefined` (memory errors, undefined behavior) or `thread` (data races). |
@@ -93,8 +101,10 @@ On the 51 Netlib problems of Table 1 from Yang 2018 (Apple M2 Max):
 
 | | solved (rel. obj. error < 1e-6) | iterations (paper) | time |
 |---|---|---|---|
-| arcLP | 46/51, other 5 within 6e-6 | 1078 (1064) | 7.6 s |
-| Mehrotra | 46/51 | 1071 (1099) | 6.8 s |
+| arcLP | 46/51, other 5 within 6e-6 | 1077 (1064) | 5.9 s |
+| Mehrotra | 47/51 | 1073 (1099) | 5.6 s |
+
+(with METIS and OpenMP; without them 7.6 s and 6.8 s)
 
 Full table: [BENCHMARKS.md](BENCHMARKS.md).
 

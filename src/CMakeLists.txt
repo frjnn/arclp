@@ -57,8 +57,24 @@ target_compile_definitions(arclp_objects PRIVATE ARCLP_BUILDING
     $<$<STREQUAL:${ARCLP_BLAS_BACKEND},accelerate>:ARCLP_USE_ACCELERATE>)
 target_link_libraries(arclp_objects PRIVATE arclp_compiler_options)
 
+if(ARCLP_USE_METIS)
+    target_sources(arclp_objects PRIVATE chol/metis_order.c)
+    target_compile_definitions(arclp_objects PRIVATE ARCLP_USE_METIS)
+    target_include_directories(arclp_objects SYSTEM PRIVATE
+        ${ARCLP_METIS_INCLUDE_DIR})
+endif()
+
+if(ARCLP_USE_OPENMP)
+    target_compile_definitions(arclp_objects PRIVATE ARCLP_USE_OPENMP)
+    target_link_libraries(arclp_objects PRIVATE OpenMP::OpenMP_C)
+endif()
+
 find_library(ARCLP_LIBM m)
 set(_arclp_link_deps ${ARCLP_BLAS_LIBRARIES})
+if(ARCLP_USE_METIS)
+    list(APPEND _arclp_link_deps ${ARCLP_METIS_LIBRARY})
+endif()
+list(APPEND _arclp_link_deps ${ARCLP_OPENMP_LIBRARIES})
 if(ARCLP_LIBM)
     list(APPEND _arclp_link_deps ${ARCLP_LIBM})
 endif()

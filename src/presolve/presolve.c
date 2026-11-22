@@ -13,6 +13,7 @@ static int open_workspace(arc_presolve *ps, const arc_csc *a, const double *b,
     const size_t m = (size_t)a->m;
     const size_t n = (size_t)a->n;
     memset(ps, 0, sizeof(*ps));
+    ps->n = a->n;
     if (ps_matrix_init(&ps->a, a) != 0)
     {
         return -1;
@@ -74,13 +75,21 @@ arc_presolve_status arc_presolve_run(arc_presolve *ps, const arc_csc *a,
     {
         return status;
     }
-    return arc_extract_reduced(ps) == 0 ? ARC_PRESOLVE_REDUCED
-                                        : ARC_PRESOLVE_OUT_OF_MEMORY;
+    if (arc_extract_reduced(ps) != 0)
+    {
+        return ARC_PRESOLVE_OUT_OF_MEMORY;
+    }
+    /* Postsolve needs neither, and the solver runs while ps is alive. */
+    ps_matrix_free(&ps->a);
+    free(ps->scatter);
+    ps->scatter = NULL;
+    ps->row_cols = NULL;
+    return ARC_PRESOLVE_REDUCED;
 }
 
 void arc_postsolve(const arc_presolve *ps, const double *xr, double *x)
 {
-    memcpy(x, ps->fixed_x, sizeof(double) * (size_t)ps->a.n);
+    memcpy(x, ps->fixed_x, sizeof(double) * (size_t)ps->n);
     for (int k = 0; k < ps->reduced.n; k++)
     {
         x[ps->reduced_col[k]] = xr[k];

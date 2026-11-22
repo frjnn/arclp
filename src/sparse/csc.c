@@ -1,5 +1,7 @@
 #include "csc.h"
 
+#include "util/parallel.h"
+
 #include <math.h>
 
 void arc_csc_mul(const arc_csc *a, const double *x, double *y)
@@ -18,17 +20,19 @@ void arc_csc_mul(const arc_csc *a, const double *x, double *y)
     }
 }
 
+static inline double column_dot(const arc_csc *a, int j, const double *y)
+{
+    double sum = 0.0;
+    for (int k = a->p[j]; k < a->p[j + 1]; k++)
+    {
+        sum += a->x[k] * y[a->i[k]];
+    }
+    return sum;
+}
+
 void arc_csc_mul_t(const arc_csc *a, const double *y, double *x)
 {
-    for (int j = 0; j < a->n; j++)
-    {
-        double sum = 0.0;
-        for (int k = a->p[j]; k < a->p[j + 1]; k++)
-        {
-            sum += a->x[k] * y[a->i[k]];
-        }
-        x[j] = sum;
-    }
+    ARC_FOR(j, a->n, (long)a->p[a->n], x[j] = column_dot(a, j, y));
 }
 
 void arc_csc_mul2(const arc_csc *a, const double *x1, const double *x2,
@@ -51,21 +55,24 @@ void arc_csc_mul2(const arc_csc *a, const double *x1, const double *x2,
     }
 }
 
+static inline void column_dot2(const arc_csc *a, int j, const double *y1,
+                               const double *y2, double *x1, double *x2)
+{
+    double u = 0.0;
+    double v = 0.0;
+    for (int k = a->p[j]; k < a->p[j + 1]; k++)
+    {
+        u += a->x[k] * y1[a->i[k]];
+        v += a->x[k] * y2[a->i[k]];
+    }
+    x1[j] = u;
+    x2[j] = v;
+}
+
 void arc_csc_mul_t2(const arc_csc *a, const double *y1, const double *y2,
                     double *x1, double *x2)
 {
-    for (int j = 0; j < a->n; j++)
-    {
-        double u = 0.0;
-        double v = 0.0;
-        for (int k = a->p[j]; k < a->p[j + 1]; k++)
-        {
-            u += a->x[k] * y1[a->i[k]];
-            v += a->x[k] * y2[a->i[k]];
-        }
-        x1[j] = u;
-        x2[j] = v;
-    }
+    ARC_FOR(j, a->n, (long)a->p[a->n], column_dot2(a, j, y1, y2, x1, x2));
 }
 
 int arc_csc_abs_range(const arc_csc *a, double *lowest, double *highest)

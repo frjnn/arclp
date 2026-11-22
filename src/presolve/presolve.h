@@ -30,7 +30,8 @@ typedef struct
 
 typedef struct
 {
-    ps_matrix a;
+    int n;           /* columns of the original problem       */
+    ps_matrix a;     /* working matrix, freed once reduced is built */
     double *b, *c;   /* working right-hand side and costs     */
     double *fixed_x; /* values of the eliminated variables    */
     arc_substitutions subs;

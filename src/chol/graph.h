@@ -18,4 +18,9 @@ void arc_graph_free(arc_graph *g);
 /* Fill-reducing ordering: perm[k] is the vertex eliminated k-th. */
 int arc_amd_order(const arc_graph *g, int *perm);
 
+#if defined(ARCLP_USE_METIS)
+/* Nested dissection by METIS; same convention as arc_amd_order. */
+int arc_metis_order(const arc_graph *g, int *perm);
+#endif
+
 #endif

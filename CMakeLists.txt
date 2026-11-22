@@ -16,6 +16,12 @@ set(ARCLP_SANITIZE "" CACHE STRING
 set(ARCLP_BLAS "auto" CACHE STRING
     "Dense kernels: auto, accelerate, cblas or none (portable C)")
 set_property(CACHE ARCLP_BLAS PROPERTY STRINGS auto accelerate cblas none)
+set(ARCLP_METIS "auto" CACHE STRING
+    "Also try METIS nested dissection: auto (if found), on or off")
+set_property(CACHE ARCLP_METIS PROPERTY STRINGS auto on off)
+set(ARCLP_OPENMP "auto" CACHE STRING
+    "Parallel loops with OpenMP: auto (if found), on or off")
+set_property(CACHE ARCLP_OPENMP PROPERTY STRINGS auto on off)
 set(ARCLP_NETLIB_DIR "${PROJECT_SOURCE_DIR}/data/arcLP" CACHE PATH
     "Directory holding the lp_*.mat Netlib files (scripts/fetch_netlib.sh)")
 
@@ -31,6 +37,8 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(GNUInstallDirs)
 include(ArclpCompilerOptions)
 include(ArclpBlas)
+include(ArclpMetis)
+include(ArclpOpenMP)
 
 # ---- Targets ---------------------------------------------------------------
 add_subdirectory(src)

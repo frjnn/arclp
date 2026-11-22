@@ -35,6 +35,13 @@ elseif(ARCLP_BLAS_BACKEND STREQUAL "cblas")
 else()
     set(ARCLP_PC_LIBS_PRIVATE "-lm")
 endif()
+if(ARCLP_USE_METIS)
+    string(PREPEND ARCLP_PC_LIBS_PRIVATE "-lmetis ")
+endif()
+if(ARCLP_USE_OPENMP)
+    list(JOIN ARCLP_OPENMP_LIBRARIES " " _arclp_omp_flags)
+    string(APPEND ARCLP_PC_LIBS_PRIVATE " ${_arclp_omp_flags}")
+endif()
 configure_file(${PROJECT_SOURCE_DIR}/cmake/arclp.pc.in
     ${PROJECT_BINARY_DIR}/arclp.pc @ONLY)
 install(FILES ${PROJECT_BINARY_DIR}/arclp.pc

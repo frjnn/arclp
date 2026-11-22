@@ -89,12 +89,9 @@ int arc_extract_reduced(arc_presolve *ps)
     if (allocate(ps, count_live(&ps->a)) != 0) {
         return -1;
     }
-    int *new_col = ps->scatter;      /* n entries, free after presolve */
+    int *new_col = ps->scatter;      /* n entries, freed after this */
     int *next = ps->row_cols;
     number_columns(ps, new_col);
     fill_entries(ps, new_col, next);
-    for (int j = 0; j < ps->a.n; j++) {
-        new_col[j] = -1;
-    }
     return 0;
 }
