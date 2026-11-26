@@ -6,7 +6,8 @@
 #include <string.h>
 
 /* Temporary arrays of the analysis; freed when it ends. */
-typedef struct {
+typedef struct
+{
     int *perm, *pinv, *parent, *count, *first, *srows, *work;
     int *block;
 } scratch;
@@ -15,13 +16,15 @@ static int scratch_open(scratch *t, int m, int n)
 {
     const size_t size = (size_t)6 * (size_t)(m + 1) + (size_t)(5 * m + 1 + n);
     t->block = malloc(sizeof(int) * size);
-    if (t->block == NULL) {
+    if (t->block == NULL)
+    {
         return -1;
     }
     int *cursor = t->block;
     int **parts[6] = {&t->perm, &t->pinv, &t->parent, &t->count, &t->srows,
                       &t->first};
-    for (int k = 0; k < 6; k++) {
+    for (int k = 0; k < 6; k++)
+    {
         *parts[k] = cursor;
         cursor += m + 1;
     }
@@ -55,12 +58,14 @@ static void layout(arc_arena *ar, arc_symbolic *s, const arc_csc *a,
 static int allocate(arc_symbolic *s, const arc_csc *a, const scratch *t)
 {
     long total_rows = 0;
-    for (int k = 0; k < s->nsuper; k++) {
+    for (int k = 0; k < s->nsuper; k++)
+    {
         total_rows += t->srows[k];
     }
     arc_arena_measure(&s->arena);
     layout(&s->arena, s, a, total_rows);
-    if (arc_arena_commit(&s->arena) != 0) {
+    if (arc_arena_commit(&s->arena) != 0)
+    {
         return -1;
     }
     layout(&s->arena, s, a, total_rows);
@@ -74,13 +79,15 @@ static int analyse(const arc_csc *a, const arc_relax_policy *policy,
                    arc_symbolic *s, const arc_graph *g, scratch *t)
 {
     if (arc_order(g, policy, t->perm, t->pinv, t->parent, t->count,
-                  t->work) != 0) {
+                  t->work) != 0)
+                  {
         return -1;
     }
     s->nsuper = arc_partition_supernodes(a->m, t->parent, t->count, policy,
                                          t->first, t->srows, t->work);
     if (allocate(s, a, t) != 0
-        || arc_build_structure(g, t->parent, t->srows, s, t->work) != 0) {
+        || arc_build_structure(g, t->parent, t->srows, s, t->work) != 0)
+        {
         return -1;
     }
     arc_build_assembly(a, s, t->work);
@@ -95,12 +102,14 @@ int arc_symbolic_analyse(const arc_csc *a, const arc_relax_policy *policy,
     arc_graph g = {0};
     scratch t = {0};
     int status = -1;
-    if (arc_graph_of_aat(a, &g) == 0 && scratch_open(&t, a->m, a->n) == 0) {
+    if (arc_graph_of_aat(a, &g) == 0 && scratch_open(&t, a->m, a->n) == 0)
+    {
         status = analyse(a, policy, s, &g, &t);
     }
     free(t.block);
     arc_graph_free(&g);
-    if (status != 0) {
+    if (status != 0)
+    {
         arc_symbolic_free(s);
     }
     return status;

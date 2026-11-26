@@ -18,8 +18,10 @@ static void small_optimum(void)
     const double b[] = {4, 6};
     const double c[] = {-1, -2, 0, 0};
     const arclp_problem lp = {2, 4, p, i, v, b, c};
-    for (int presolve = 0; presolve <= 1; presolve++) {
-        for (int k = 0; k < 2; k++) {
+    for (int presolve = 0; presolve <= 1; presolve++)
+    {
+        for (int k = 0; k < 2; k++)
+        {
             arclp_options o;
             arclp_default_options(&o);
             o.method = METHODS[k];
@@ -42,7 +44,8 @@ static void figure_two_example(void)
     const int i[] = {0, 0};
     const double v[] = {1, 1}, b[] = {5}, c[] = {1, 0};
     const arclp_problem lp = {1, 2, p, i, v, b, c};
-    for (int k = 0; k < 2; k++) {
+    for (int k = 0; k < 2; k++)
+    {
         arclp_options o;
         arclp_default_options(&o);
         o.method = METHODS[k];
@@ -76,7 +79,8 @@ static void infeasible_and_unbounded(void)
     const int i2[] = {0, 0};
     const double v2[] = {1, -1}, b2[] = {1}, c2[] = {-1, 0};
     const arclp_problem unbounded = {1, 2, p2, i2, v2, b2, c2};
-    for (int k = 0; k < 2; k++) {
+    for (int k = 0; k < 2; k++)
+    {
         CHECK(solve_raw(&infeasible, METHODS[k]) != ARCLP_OPTIMAL);
         CHECK(solve_raw(&unbounded, METHODS[k]) != ARCLP_OPTIMAL);
     }
@@ -106,7 +110,8 @@ static void invalid_input(void)
     CHECK(arclp_solve(NULL, NULL, x, NULL) == ARCLP_INVALID_INPUT);
 }
 
-typedef struct {
+typedef struct
+{
     const char *name;
     double objective;
 } netlib_case;
@@ -117,18 +122,21 @@ static void netlib(const char *dir)
         {"afiro", -4.647531428571e+02}, {"adlittle", 2.254949631624e+05},
         {"blend", -3.081214984583e+01}, {"share2b", -4.157322407414e+02},
         {"degen2", -1.435178000000e+03}, {"scagr7", -2.331389824331e+06}};
-    for (size_t t = 0; t < sizeof(cases) / sizeof(*cases); t++) {
+    for (size_t t = 0; t < sizeof(cases) / sizeof(*cases); t++)
+    {
         char path[4096], err[256];
         snprintf(path, sizeof(path), "%s/lp_%s.mat", dir, cases[t].name);
         mat_lp m;
-        if (mat_lp_load(path, &m, err, sizeof(err)) != 0) {
+        if (mat_lp_load(path, &m, err, sizeof(err)) != 0)
+        {
             printf("  (skipping %s: %s)\n", cases[t].name, err);
             continue;
         }
         const arclp_problem lp = {m.m, m.n, m.col_ptr, m.row_idx, m.values,
                                   m.b, m.c};
         double *x = malloc(sizeof(double) * (size_t)m.n);
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < 2; k++)
+        {
             arclp_options o;
             arclp_default_options(&o);
             o.method = METHODS[k];

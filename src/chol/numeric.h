@@ -10,7 +10,8 @@
 
 enum { ARC_MAX_RHS = 4 };
 
-typedef struct {
+typedef struct
+{
     const arc_symbolic *sym;
     double *lx;          /* dense blocks of every supernode              */
     int *map;            /* row label -> position in current supernode   */

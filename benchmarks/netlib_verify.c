@@ -19,7 +19,8 @@ static const double MAX_RESIDUAL = 1e-6;
 static const double MAX_NEGATIVE = 1e-8;
 static const double MAX_OBJECTIVE_ERROR = 1e-5;
 
-typedef struct {
+typedef struct
+{
     arclp_status status;
     double residual, lowest, objective_error;
 } check;
@@ -30,14 +31,17 @@ static check verify(const mat_lp *m, const double *x, arclp_status status,
     check c = {status, 0.0, INFINITY, 0.0};
     double *ax = calloc((size_t)m->m + 1, sizeof(double));
     double nb = 0.0, objective = 0.0;
-    for (int j = 0; j < m->n; j++) {
-        for (int k = m->col_ptr[j]; k < m->col_ptr[j + 1]; k++) {
+    for (int j = 0; j < m->n; j++)
+    {
+        for (int k = m->col_ptr[j]; k < m->col_ptr[j + 1]; k++)
+        {
             ax[m->row_idx[k]] += m->values[k] * x[j];
         }
         c.lowest = fmin(c.lowest, x[j]);
         objective += m->c[j] * x[j];
     }
-    for (int i = 0; i < m->m; i++) {
+    for (int i = 0; i < m->m; i++)
+    {
         c.residual += (ax[i] - m->b[i]) * (ax[i] - m->b[i]);
         nb += m->b[i] * m->b[i];
     }
@@ -81,21 +85,25 @@ static int report(const char *name, const char *method, int presolve, check c)
 
 int main(int argc, char **argv)
 {
-    if (argc != 2) {
+    if (argc != 2)
+    {
         fprintf(stderr, "usage: %s DATA_DIR\n", argv[0]);
         return EXIT_FAILURE;
     }
     int failures = 0;
-    for (int k = 0; k < PAPER_TABLE_SIZE; k++) {
+    for (int k = 0; k < PAPER_TABLE_SIZE; k++)
+    {
         const paper_row *row = &PAPER_TABLE[k];
         char path[4096], err[256];
         snprintf(path, sizeof(path), "%s/lp_%s.mat", argv[1], row->name);
         mat_lp m;
-        if (mat_lp_load(path, &m, err, sizeof(err)) != 0) {
+        if (mat_lp_load(path, &m, err, sizeof(err)) != 0)
+        {
             fprintf(stderr, "skipping %s: %s\n", row->name, err);
             continue;
         }
-        for (int presolve = 1; presolve >= 0; presolve--) {
+        for (int presolve = 1; presolve >= 0; presolve--)
+        {
             failures += !report(row->name, "arc", presolve,
                                 run(&m, ARCLP_METHOD_ARC_SEARCH, presolve,
                                     row->reference_objective));

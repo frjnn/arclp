@@ -10,7 +10,8 @@
 #ifndef ARC_AMD_STATE_H
 #define ARC_AMD_STATE_H
 
-typedef struct {
+typedef struct
+{
     int n;
     int *cp, *ci;            /* quotient graph (cp has n + 1 entries)       */
     int capacity, used;      /* size of ci and its occupied prefix          */
@@ -19,7 +20,8 @@ typedef struct {
 } amd_state;
 
 /* Current pivot element being built. */
-typedef struct {
+typedef struct
+{
     int k;          /* pivot variable, becomes the new element  */
     int elenk;      /* number of elements adjacent to k         */
     int nvk;        /* supervariable size of k                  */

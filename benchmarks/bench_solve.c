@@ -14,11 +14,13 @@ int bench_solve(const mat_lp *lp, arclp_method method, int repeat,
     arclp_default_options(&options);
     options.method = method;
     double *x = malloc(sizeof(double) * (size_t)(lp->n + 1));
-    if (x == NULL) {
+    if (x == NULL)
+    {
         return -1;
     }
     out->seconds = INFINITY;
-    for (int r = 0; r < repeat; r++) {
+    for (int r = 0; r < repeat; r++)
+    {
         arclp_solve(&problem, &options, x, &out->info);
         out->seconds = fmin(out->seconds, out->info.seconds_total);
     }

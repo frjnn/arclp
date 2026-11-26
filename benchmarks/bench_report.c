@@ -9,10 +9,12 @@ static void print_method_header(FILE *out, const char *name)
 void bench_print_header(FILE *out, const bench_config *config)
 {
     fprintf(out, "%-9s %6s %7s %6s %7s", "problem", "m", "n", "m'", "n'");
-    if (config->run_arc) {
+    if (config->run_arc)
+    {
         print_method_header(out, "arcLP");
     }
-    if (config->run_mehrotra) {
+    if (config->run_mehrotra)
+    {
         print_method_header(out, "Mehrotra");
     }
     fputc('\n', out);
@@ -33,10 +35,12 @@ void bench_print_row(FILE *out, const paper_row *row, const mat_lp *lp,
     const bench_result *any = config->run_arc ? arc : mehrotra;
     fprintf(out, "%-9s %6d %7d %6d %7d", row->name, lp->m, lp->n,
             any->info.reduced_rows, any->info.reduced_cols);
-    if (config->run_arc) {
+    if (config->run_arc)
+    {
         print_method(out, arc, row->paper_arc_iterations);
     }
-    if (config->run_mehrotra) {
+    if (config->run_mehrotra)
+    {
         print_method(out, mehrotra, row->paper_mehrotra_iterations);
     }
     fputc('\n', out);

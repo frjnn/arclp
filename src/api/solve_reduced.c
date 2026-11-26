@@ -19,12 +19,15 @@ static const double EMPTY_RESIDUAL = 1e-8;
 static int solve_trivial(const arc_csc *a, const double *b, const double *c,
                          double *x)
 {
-    if (a->n == 0) {
+    if (a->n == 0)
+    {
         return arc_norm2(a->m, b) <= EMPTY_RESIDUAL ? ARCLP_OPTIMAL
                                                     : ARCLP_INFEASIBLE;
     }
-    if (a->m == 0) {
-        for (int j = 0; j < a->n; j++) {
+    if (a->m == 0)
+    {
+        for (int j = 0; j < a->n; j++)
+        {
             x[j] = 0.0;
         }
         return arc_min(a->n, c) < 0.0 ? ARCLP_UNBOUNDED : ARCLP_OPTIMAL;
@@ -34,7 +37,8 @@ static int solve_trivial(const arc_csc *a, const double *b, const double *c,
 
 static arclp_status status_of(arc_ipm_outcome outcome)
 {
-    switch (outcome) {
+    switch (outcome)
+    {
     case ARC_IPM_CONVERGED: return ARCLP_OPTIMAL;
     case ARC_IPM_PRIMAL_INFEASIBLE: return ARCLP_INFEASIBLE;
     case ARC_IPM_UNBOUNDED: return ARCLP_UNBOUNDED;
@@ -50,7 +54,8 @@ static arclp_status iterate(arc_ipm *ipm, arc_step_rule *rule,
     const arc_ipm_settings settings = {options->tolerance,
                                        options->max_iterations,
                                        options->verbose};
-    if (arc_ipm_start_point(ipm) != 0) {
+    if (arc_ipm_start_point(ipm) != 0)
+    {
         return ARCLP_OUT_OF_MEMORY;
     }
     const arc_ipm_result result = arc_ipm_run(ipm, rule, &settings);
@@ -68,7 +73,8 @@ arclp_status arc_solve_reduced(const arc_csc *a, const double *b,
                                double *x, arclp_info *info)
 {
     const int trivial = solve_trivial(a, b, c, x);
-    if (trivial >= 0) {
+    if (trivial >= 0)
+    {
         return (arclp_status)trivial;
     }
     const double start = arc_seconds();
@@ -80,7 +86,8 @@ arclp_status arc_solve_reduced(const arc_csc *a, const double *b,
     const double analysed = arc_seconds();
     info->seconds_analyse = analysed - start;
     arclp_status status = ARCLP_OUT_OF_MEMORY;
-    if (ready) {
+    if (ready)
+    {
         status = iterate(&ipm, rule, options, info);
         arc_copy(a->n, ipm.x, x);
         arc_ipm_free(&ipm);

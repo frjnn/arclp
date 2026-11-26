@@ -8,7 +8,8 @@
 
 #include <stddef.h>
 
-typedef struct {
+typedef struct
+{
     int m, n;
     int *col_ptr, *row_idx;
     double *values, *b, *c;

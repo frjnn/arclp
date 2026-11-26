@@ -30,8 +30,10 @@ const char *arclp_status_name(arclp_status status)
 
 static int all_finite(const double *v, int len)
 {
-    for (int k = 0; k < len; k++) {
-        if (!isfinite(v[k])) {
+    for (int k = 0; k < len; k++)
+    {
+        if (!isfinite(v[k]))
+        {
             return 0;
         }
     }
@@ -40,16 +42,21 @@ static int all_finite(const double *v, int len)
 
 static int valid_matrix(const arclp_problem *p)
 {
-    if (p->col_ptr[0] != 0) {
+    if (p->col_ptr[0] != 0)
+    {
         return 0;
     }
-    for (int j = 0; j < p->n; j++) {
-        if (p->col_ptr[j + 1] < p->col_ptr[j]) {
+    for (int j = 0; j < p->n; j++)
+    {
+        if (p->col_ptr[j + 1] < p->col_ptr[j])
+        {
             return 0;
         }
     }
-    for (int k = 0; k < p->col_ptr[p->n]; k++) {
-        if (p->row_idx[k] < 0 || p->row_idx[k] >= p->m) {
+    for (int k = 0; k < p->col_ptr[p->n]; k++)
+    {
+        if (p->row_idx[k] < 0 || p->row_idx[k] >= p->m)
+        {
             return 0;
         }
     }
@@ -84,14 +91,16 @@ static arclp_status solve(const arclp_problem *p, const arclp_options *o,
     arclp_status status =
         presolve_status(arc_presolve_run(&ps, &a, p->b, p->c, o->presolve));
     info->seconds_presolve = arc_seconds() - start;
-    if (status == ARCLP_OPTIMAL) {
+    if (status == ARCLP_OPTIMAL)
+    {
         info->reduced_rows = ps.reduced.m;
         info->reduced_cols = ps.reduced.n;
         double *xr = malloc(sizeof(double) * (size_t)(ps.reduced.n + 1));
         status = xr == NULL ? ARCLP_OUT_OF_MEMORY
                             : arc_solve_reduced(&ps.reduced, ps.reduced_b,
                                                 ps.reduced_c, o, xr, info);
-        if (xr != NULL) {
+        if (xr != NULL)
+        {
             arc_postsolve(&ps, xr, x);
         }
         free(xr);

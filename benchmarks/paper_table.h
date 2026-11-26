@@ -9,7 +9,8 @@
 #ifndef ARC_PAPER_TABLE_H
 #define ARC_PAPER_TABLE_H
 
-typedef struct {
+typedef struct
+{
     const char *name;
     int paper_arc_iterations;
     int paper_mehrotra_iterations;

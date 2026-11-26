@@ -4,19 +4,25 @@
 void amd_set_differences(amd_state *s, const amd_pivot *e)
 {
     s->mark = amd_clear_marks(s, s->mark);
-    for (int pk = e->begin; pk < e->end; pk++) {
+    for (int pk = e->begin; pk < e->end; pk++)
+    {
         const int i = s->ci[pk];
         const int eln = s->elen[i];
-        if (eln <= 0) {
+        if (eln <= 0)
+        {
             continue;
         }
         const int nvi = -s->nv[i];
         const int wnvi = s->mark - nvi;
-        for (int p = s->cp[i]; p < s->cp[i] + eln; p++) {
+        for (int p = s->cp[i]; p < s->cp[i] + eln; p++)
+        {
             const int el = s->ci[p];
-            if (s->w[el] >= s->mark) {
+            if (s->w[el] >= s->mark)
+            {
                 s->w[el] -= nvi;
-            } else if (s->w[el] != 0) {
+            }
+            else if (s->w[el] != 0)
+            {
                 s->w[el] = s->degree[el] + wnvi;
             }
         }
@@ -29,17 +35,22 @@ static int prune_elements(amd_state *s, int k, int i, int *pn, unsigned *hash)
 {
     const int p1 = s->cp[i];
     int d = 0;
-    for (int p = p1; p < p1 + s->elen[i]; p++) {
+    for (int p = p1; p < p1 + s->elen[i]; p++)
+    {
         const int el = s->ci[p];
-        if (s->w[el] == 0) {
+        if (s->w[el] == 0)
+        {
             continue;
         }
         const int dext = s->w[el] - s->mark;
-        if (dext > 0) {
+        if (dext > 0)
+        {
             d += dext;
             s->ci[(*pn)++] = el;
             *hash += (unsigned)el;
-        } else {
+        }
+        else
+        {
             s->cp[el] = amd_flip(k);
             s->w[el] = 0;
         }
@@ -53,10 +64,12 @@ static int prune_variables(amd_state *s, int i, int old_elen, int *pn,
 {
     const int p1 = s->cp[i];
     int d = 0;
-    for (int p = p1 + old_elen; p < p1 + s->len[i]; p++) {
+    for (int p = p1 + old_elen; p < p1 + s->len[i]; p++)
+    {
         const int j = s->ci[p];
         const int nvj = s->nv[j];
-        if (nvj <= 0) {
+        if (nvj <= 0)
+        {
             continue;
         }
         d += nvj;
@@ -94,7 +107,8 @@ static void relink(amd_state *s, int k, int i, int p3, int pn, unsigned hash)
 /* Scan 2: approximate external degree of every variable in Lk. */
 void amd_update_degrees(amd_state *s, amd_pivot *e)
 {
-    for (int pk = e->begin; pk < e->end; pk++) {
+    for (int pk = e->begin; pk < e->end; pk++)
+    {
         const int i = s->ci[pk];
         unsigned hash = 0;
         const int old_elen = s->elen[i];
@@ -103,9 +117,12 @@ void amd_update_degrees(amd_state *s, amd_pivot *e)
         const int p3 = pn;
         s->elen[i] = pn - s->cp[i] + 1;
         d += prune_variables(s, i, old_elen, &pn, &hash);
-        if (d == 0) {
+        if (d == 0)
+        {
             mass_eliminate(s, e, i);
-        } else {
+        }
+        else
+        {
             s->degree[i] = s->degree[i] < d ? s->degree[i] : d;
             relink(s, e->k, i, p3, pn, hash);
         }

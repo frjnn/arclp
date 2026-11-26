@@ -6,18 +6,21 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     const uint8_t *p;
     const uint8_t *end;
 } mat_cursor;
 
-typedef struct {
+typedef struct
+{
     uint32_t type;
     uint32_t bytes;
     const uint8_t *data;
 } mat_element;
 
-enum {
+enum
+{
     MI_INT8 = 1, MI_UINT8, MI_INT16, MI_UINT16, MI_INT32, MI_UINT32,
     MI_SINGLE, MI_DOUBLE = 9, MI_INT64 = 12, MI_UINT64, MI_MATRIX,
     MI_COMPRESSED
@@ -35,7 +38,8 @@ int mat_to_doubles(const mat_element *el, double *out, size_t count);
 size_t mat_count(const mat_element *el);
 
 /* Parsed header of a miMATRIX element. */
-typedef struct {
+typedef struct
+{
     int mx_class;
     int rows, cols;
     mat_cursor body;      /* remaining sub-elements after the name */

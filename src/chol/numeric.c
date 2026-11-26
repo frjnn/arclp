@@ -33,7 +33,8 @@ int arc_numeric_create(const arc_symbolic *sym, arc_numeric *num)
     num->pivot_tolerance = DEFAULT_PIVOT_TOLERANCE;
     arc_arena_measure(&num->arena);
     layout(&num->arena, num);
-    if (arc_arena_commit(&num->arena) != 0) {
+    if (arc_arena_commit(&num->arena) != 0)
+    {
         return -1;
     }
     layout(&num->arena, num);
@@ -57,7 +58,8 @@ static void push(arc_numeric *num, int d, int row_pos)
 
 /* Rows p1..p2 of descendant d fall in the columns of s; rows p2..end lie
  * below them.  C := L_d(p1:end, :) L_d(p1:p2, :)' is n2 x n1 (lower). */
-typedef struct {
+typedef struct
+{
     int p1, p2, n1, n2;
 } update_rows;
 
@@ -67,7 +69,8 @@ static update_rows rows_in(const arc_numeric *num, int d, int s)
     const int *rows = sym->rows + sym->row_ptr[d];
     const int ld = arc_sn_rows(sym, d);
     update_rows u = {num->next_row[d], num->next_row[d], 0, 0};
-    while (u.p2 < ld && rows[u.p2] < sym->first[s + 1]) {
+    while (u.p2 < ld && rows[u.p2] < sym->first[s + 1])
+    {
         u.p2++;
     }
     u.n1 = u.p2 - u.p1;
@@ -82,7 +85,8 @@ static void form_update(const arc_numeric *num, int d, update_rows u)
     const int k = arc_sn_cols(sym, d);
     const double *l = num->lx + sym->val_ptr[d];
     arc_syrk_ln(u.n1, k, 1.0, l + u.p1, ld, 0.0, num->update, u.n2);
-    if (u.n2 > u.n1) {
+    if (u.n2 > u.n1)
+    {
         arc_gemm_nt(u.n2 - u.n1, u.n1, k, 1.0, l + u.p2, ld, l + u.p1, ld,
                     0.0, num->update + u.n1, u.n2);
     }
@@ -94,7 +98,8 @@ static inline void scatter_column(double *block, int nrows, const int *rel,
 {
     double *target = block + (long)rel[jj] * nrows;
     const double *src = update + (long)jj * u.n2;
-    for (int ii = jj; ii < u.n2; ii++) {
+    for (int ii = jj; ii < u.n2; ii++)
+    {
         target[rel[ii]] -= src[ii];
     }
 }
@@ -107,7 +112,8 @@ static void scatter_update(arc_numeric *num, int d, int s, update_rows u,
     const int *rows = sym->rows + sym->row_ptr[d] + u.p1;
     const int nrows = arc_sn_rows(sym, s);
     int *rel = num->relative;
-    for (int ii = 0; ii < u.n2; ii++) {
+    for (int ii = 0; ii < u.n2; ii++)
+    {
         rel[ii] = num->map[rows[ii]];
     }
     ARC_FOR(jj, u.n1, (long)u.n1 * u.n2,
@@ -119,7 +125,8 @@ static void apply_update(arc_numeric *num, int d, int s, double *block)
     const update_rows u = rows_in(num, d, s);
     form_update(num, d, u);
     scatter_update(num, d, s, u, block);
-    if (u.p2 < arc_sn_rows(num->sym, d)) {
+    if (u.p2 < arc_sn_rows(num->sym, d))
+    {
         push(num, d, u.p2);
     }
 }
@@ -130,15 +137,19 @@ static void pivot_floors(arc_numeric *num, const double *d)
 {
     const arc_csc *ap = &num->sym->a_perm;
     double *floor = num->pivot_floor;
-    for (int k = 0; k < ap->m; k++) {
+    for (int k = 0; k < ap->m; k++)
+    {
         floor[k] = 0.0;
     }
-    for (int j = 0; j < ap->n; j++) {
-        for (int t = ap->p[j]; t < ap->p[j + 1]; t++) {
+    for (int j = 0; j < ap->n; j++)
+    {
+        for (int t = ap->p[j]; t < ap->p[j + 1]; t++)
+        {
             floor[ap->i[t]] += ap->x[t] * ap->x[t] * d[j];
         }
     }
-    for (int k = 0; k < ap->m; k++) {
+    for (int k = 0; k < ap->m; k++)
+    {
         floor[k] *= num->pivot_tolerance;
     }
 }
@@ -151,18 +162,21 @@ static void factor_supernode(arc_numeric *num, int s, const double *d)
     const int ncols = arc_sn_cols(sym, s);
     double *block = num->lx + sym->val_ptr[s];
     memset(block, 0, sizeof(double) * (size_t)nrows * (size_t)ncols);
-    for (int r = 0; r < nrows; r++) {
+    for (int r = 0; r < nrows; r++)
+    {
         num->map[rows[r]] = r;
     }
     arc_assemble_supernode(sym, s, d, num->map, block);
-    for (int dd = num->link_head[s], next; dd != -1; dd = next) {
+    for (int dd = num->link_head[s], next; dd != -1; dd = next)
+    {
         next = num->link_next[dd];
         apply_update(num, dd, s, block);
     }
     num->tiny_pivots += arc_dense_cholesky(nrows, ncols, block, nrows,
                                            num->pivot_floor + sym->first[s],
                                            HUGE_PIVOT);
-    if (nrows > ncols) {
+    if (nrows > ncols)
+    {
         push(num, s, ncols);
     }
 }
@@ -173,10 +187,12 @@ int arc_numeric_factor(arc_numeric *num, const double *d)
     pivot_floors(num, d);
     num->tiny_pivots = 0;
     arc_dense_begin();
-    for (int s = 0; s < sym->nsuper; s++) {
+    for (int s = 0; s < sym->nsuper; s++)
+    {
         num->link_head[s] = -1;
     }
-    for (int s = 0; s < sym->nsuper; s++) {
+    for (int s = 0; s < sym->nsuper; s++)
+    {
         factor_supernode(num, s, d);
     }
     arc_dense_end();

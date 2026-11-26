@@ -9,11 +9,13 @@ static inline void assemble_column(const arc_symbolic *sym, int k,
                                    double *col)
 {
     const arc_csc *ap = &sym->a_perm;
-    for (int t = sym->by_row_ptr[k]; t < sym->by_row_ptr[k + 1]; t++) {
+    for (int t = sym->by_row_ptr[k]; t < sym->by_row_ptr[k + 1]; t++)
+    {
         const int j = sym->by_row_col[t];
         const int q = sym->by_row_pos[t];
         const double w = ap->x[q] * d[j];
-        for (int r = q; r < ap->p[j + 1]; r++) {
+        for (int r = q; r < ap->p[j + 1]; r++)
+        {
             col[map[ap->i[r]]] += w * ap->x[r];
         }
     }

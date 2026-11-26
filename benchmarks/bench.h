@@ -9,7 +9,8 @@
 
 #include <stdio.h>
 
-typedef struct {
+typedef struct
+{
     const char *data_dir;
     const char *only;        /* single problem name, or NULL           */
     const char *csv_path;    /* optional machine-readable output       */
@@ -17,13 +18,15 @@ typedef struct {
     int run_arc, run_mehrotra;
 } bench_config;
 
-typedef struct {
+typedef struct
+{
     arclp_info info;
     double seconds;          /* best total time over the repeats       */
     double objective_error;  /* |obj - ref| / max(1, |ref|)            */
 } bench_result;
 
-typedef struct {
+typedef struct
+{
     int problems, solved;
     long iterations, paper_iterations;
     double seconds;

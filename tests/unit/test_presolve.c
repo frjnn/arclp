@@ -3,7 +3,8 @@
 
 #include "presolve/presolve.h"
 
-typedef struct {
+typedef struct
+{
     int m, n;
     int p[8];
     int i[16];

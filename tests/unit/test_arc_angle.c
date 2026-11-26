@@ -17,10 +17,12 @@ static void check_case(double gap, double v1, double v2)
     const double a = arc_component_angle(gap, v1, v2);
     CHECK(a > 0.0 && a <= HALF_PI + 1e-15);
     const double scale = fabs(gap) + fabs(v1) + fabs(v2);
-    for (int k = 0; k <= 100; k++) {
+    for (int k = 0; k <= 100; k++)
+    {
         CHECK(along_arc(gap, v1, v2, a * k / 100.0) >= -1e-12 * scale);
     }
-    if (a < HALF_PI) {
+    if (a < HALF_PI)
+    {
         CHECK_NEAR(along_arc(gap, v1, v2, a), 0.0, 1e-10 * scale);
     }
 }
@@ -28,7 +30,8 @@ static void check_case(double gap, double v1, double v2)
 /* The filter may only skip components whose angle is not below t. */
 static void check_filter(double gap, double v1, double v2, double t)
 {
-    if (arc_component_angle(gap, v1, v2) < t) {
+    if (arc_component_angle(gap, v1, v2) < t)
+    {
         CHECK(arc_angle_may_be_below(gap, v1, v2, arc_trig_of(t)));
     }
 }
@@ -43,11 +46,13 @@ int main(void)
     check_case(1.0, -1.0, 2.0);     /* moving away: full quarter turn  */
     CHECK_NEAR(arc_component_angle(1.0, -1.0, 2.0), HALF_PI, 0.0);
     unsigned seed = 3;
-    for (int t = 0; t < 2000; t++) {
+    for (int t = 0; t < 2000; t++)
+    {
         check_case(check_random(&seed) + 1e-3, 4.0 * check_random(&seed) - 2.0,
                    4.0 * check_random(&seed) - 2.0);
     }
-    for (int t = 0; t < 200000; t++) {
+    for (int t = 0; t < 200000; t++)
+    {
         const double gap = check_random(&seed) + 1e-6;
         const double v1 = 6.0 * check_random(&seed) - 3.0;
         const double v2 = 6.0 * check_random(&seed) - 3.0;

@@ -6,7 +6,8 @@ arc_relax_policy arc_default_relax_policy(void)
     return policy;
 }
 
-typedef struct {
+typedef struct
+{
     long cols;
     long rows;
     long nonzeros;   /* structural nonzeros of the fundamental members */
@@ -19,7 +20,8 @@ static long trapezoid(long cols, long rows)
 
 static int accept(const arc_relax_policy *policy, const group *g)
 {
-    if (g->cols <= policy->small_cols) {
+    if (g->cols <= policy->small_cols)
+    {
         return 1;
     }
     const long entries = trapezoid(g->cols, g->rows);
@@ -33,19 +35,24 @@ static int accept(const arc_relax_policy *policy, const group *g)
 static int fundamental(int n, const int *parent, const int *count,
                        int *nchild, int *ffirst)
 {
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < n; j++)
+    {
         nchild[j] = 0;
     }
-    for (int j = 0; j < n; j++) {
-        if (parent[j] != -1) {
+    for (int j = 0; j < n; j++)
+    {
+        if (parent[j] != -1)
+        {
             nchild[parent[j]]++;
         }
     }
     int nf = 0;
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < n; j++)
+    {
         const int extends = j > 0 && parent[j - 1] == j
                          && count[j - 1] == count[j] + 1 && nchild[j] == 1;
-        if (!extends) {
+        if (!extends)
+        {
             ffirst[nf++] = j;
         }
     }
@@ -69,17 +76,21 @@ static void relax(int nf, const int *ffirst, const int *owner,
                   const arc_relax_policy *policy, int *starts, int *grows)
 {
     group current = fundamental_group(ffirst, count, nf - 1);
-    for (int f = nf - 2; f >= 0; f--) {
+    for (int f = nf - 2; f >= 0; f--)
+    {
         const int last = ffirst[f + 1] - 1;
         const group mine = fundamental_group(ffirst, count, f);
         const group merged = {mine.cols + current.cols,
                               mine.cols + current.rows,
                               mine.nonzeros + current.nonzeros};
         if (parent[last] != -1 && owner[parent[last]] == f + 1
-            && accept(policy, &merged)) {
+            && accept(policy, &merged))
+            {
             starts[f + 1] = 0;
             current = merged;
-        } else {
+        }
+        else
+        {
             grows[f + 1] = (int)current.rows;
             current = mine;
         }
@@ -91,7 +102,8 @@ int arc_partition_supernodes(int n, const int *parent, const int *count,
                              const arc_relax_policy *policy,
                              int *first, int *rows, int *work)
 {
-    if (n == 0) {
+    if (n == 0)
+    {
         first[0] = 0;
         return 0;
     }
@@ -100,16 +112,20 @@ int arc_partition_supernodes(int n, const int *parent, const int *count,
     int *starts = work + 2 * n + 1;   /* 1 if f begins a relaxed supernode */
     int *grows = work + 3 * n + 1;    /* rows of the relaxed group at f   */
     const int nf = fundamental(n, parent, count, work + 4 * n + 1, ffirst);
-    for (int f = 0; f < nf; f++) {
-        for (int j = ffirst[f]; j < ffirst[f + 1]; j++) {
+    for (int f = 0; f < nf; f++)
+    {
+        for (int j = ffirst[f]; j < ffirst[f + 1]; j++)
+        {
             owner[j] = f;
         }
         starts[f] = 1;
     }
     relax(nf, ffirst, owner, parent, count, policy, starts, grows);
     int ns = 0;
-    for (int f = 0; f < nf; f++) {
-        if (starts[f]) {
+    for (int f = 0; f < nf; f++)
+    {
+        if (starts[f])
+        {
             first[ns] = ffirst[f];
             rows[ns++] = grows[f];
         }

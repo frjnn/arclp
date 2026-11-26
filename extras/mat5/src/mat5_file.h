@@ -4,7 +4,8 @@
 
 #include "mat5_format.h"
 
-typedef struct {
+typedef struct
+{
     uint8_t *bytes;        /* whole file              */
     uint8_t *inflated;     /* decompressed variable   */
     mat_element variable;  /* the miMATRIX element    */

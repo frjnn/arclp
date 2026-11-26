@@ -16,7 +16,8 @@
 
 enum { THREADS = 4, ROUNDS = 3 };
 
-typedef struct {
+typedef struct
+{
     const arclp_problem *problem;
     arclp_method method;
     double objective;
@@ -31,7 +32,8 @@ static void *run(void *arg)
     o.method = j->method;
     double *x = malloc(sizeof(double) * (size_t)j->problem->n);
     j->matches = 1;
-    for (int r = 0; r < ROUNDS; r++) {
+    for (int r = 0; r < ROUNDS; r++)
+    {
         arclp_info info;
         const arclp_status s = arclp_solve(j->problem, &o, x, &info);
         j->matches &= s == ARCLP_OPTIMAL
@@ -47,7 +49,8 @@ static void check_problem(const char *dir, const char *name)
     char path[4096], err[256];
     snprintf(path, sizeof(path), "%s/lp_%s.mat", dir, name);
     mat_lp m;
-    if (mat_lp_load(path, &m, err, sizeof(err)) != 0) {
+    if (mat_lp_load(path, &m, err, sizeof(err)) != 0)
+    {
         printf("  (skipping %s: %s)\n", name, err);
         return;
     }
@@ -55,7 +58,8 @@ static void check_problem(const char *dir, const char *name)
                               m.b, m.c};
     job jobs[THREADS];
     pthread_t threads[THREADS];
-    for (int t = 0; t < THREADS; t++) {
+    for (int t = 0; t < THREADS; t++)
+    {
         arclp_options o;
         arclp_default_options(&o);
         o.method = t % 2 ? ARCLP_METHOD_MEHROTRA : ARCLP_METHOD_ARC_SEARCH;
@@ -66,10 +70,12 @@ static void check_problem(const char *dir, const char *name)
         const job j = {&lp, o.method, info.objective, 0};
         jobs[t] = j;
     }
-    for (int t = 0; t < THREADS; t++) {
+    for (int t = 0; t < THREADS; t++)
+    {
         pthread_create(&threads[t], NULL, run, &jobs[t]);
     }
-    for (int t = 0; t < THREADS; t++) {
+    for (int t = 0; t < THREADS; t++)
+    {
         pthread_join(threads[t], NULL);
         CHECK(jobs[t].matches);
     }

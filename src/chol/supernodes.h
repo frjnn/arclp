@@ -5,7 +5,8 @@
 /* Amalgamation limits in the style of CHOLMOD: a merged supernode with
  * `cols` columns is accepted while its fraction of explicit zeros stays
  * below the threshold of the first size class it fits in. */
-typedef struct {
+typedef struct
+{
     int small_cols;       /* always merge up to this many columns */
     int mid_cols;
     double mid_zeros;

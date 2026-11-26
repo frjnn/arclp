@@ -13,7 +13,8 @@
 #include "util/arena.h"
 #include "supernodes.h"
 
-typedef struct {
+typedef struct
+{
     int m;
     int *perm;          /* perm[k] = row of A eliminated k-th            */
     int *pinv;

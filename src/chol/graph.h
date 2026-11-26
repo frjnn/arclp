@@ -4,7 +4,8 @@
 
 #include "sparse/csc.h"
 
-typedef struct {
+typedef struct
+{
     int n;
     int *p;   /* n + 1 list pointers   */
     int *i;   /* neighbours            */

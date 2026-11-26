@@ -4,7 +4,8 @@
 
 #include "step_rule.h"
 
-typedef struct {
+typedef struct
+{
     arc_step_rule base;     /* must stay first */
     int m, n;
     double *dx, *dy, *ds;   /* affine-scaling direction          */

@@ -5,7 +5,8 @@
 #include "chol/chol_solver.h"
 #include "ipm/step_rule.h"
 
-typedef struct {
+typedef struct
+{
     arc_step_rule base;
     int steps;
 } poison_rule;

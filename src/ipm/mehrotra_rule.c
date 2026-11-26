@@ -17,7 +17,8 @@ static void layout(arc_arena *ar, mehrotra_rule *r)
     r->dy = arc_arena_take(ar, m, sizeof(double));
     r->ddy = arc_arena_take(ar, m, sizeof(double));
     double **vectors[] = {&r->dx, &r->ds, &r->ddx, &r->dds, &r->work};
-    for (size_t k = 0; k < sizeof(vectors) / sizeof(*vectors); k++) {
+    for (size_t k = 0; k < sizeof(vectors) / sizeof(*vectors); k++)
+    {
         *vectors[k] = arc_arena_take(ar, n, sizeof(double));
     }
 }
@@ -26,7 +27,8 @@ static void layout(arc_arena *ar, mehrotra_rule *r)
 static void move(int len, double *v, const double *d, const double *dd,
                  double step)
 {
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
+    {
         v[i] += -d[i] * step + dd[i] * step;
     }
 }
@@ -66,7 +68,8 @@ static const arc_step_rule_ops MEHROTRA_OPS = {mehrotra_step, mehrotra_stalled,
 arc_step_rule *arc_mehrotra_rule_create(int m, int n)
 {
     mehrotra_rule *r = calloc(1, sizeof(*r));
-    if (r == NULL) {
+    if (r == NULL)
+    {
         return NULL;
     }
     r->base.ops = &MEHROTRA_OPS;
@@ -74,7 +77,8 @@ arc_step_rule *arc_mehrotra_rule_create(int m, int n)
     r->n = n;
     arc_arena_measure(&r->arena);
     layout(&r->arena, r);
-    if (arc_arena_commit(&r->arena) != 0) {
+    if (arc_arena_commit(&r->arena) != 0)
+    {
         free(r);
         return NULL;
     }
