@@ -1,9 +1,12 @@
 /* The closed-form step angle keeps the component feasible up to the angle
- * and, when it is below pi/2, hits the boundary exactly there. */
+ * and, when it is below pi/2, hits the boundary exactly there; a collapsed
+ * arc falls back to the first derivative. */
 #include "check.h"
 
 #include "ipm/arc_filter.h"
 #include "ipm/arc_search.h"
+
+#include <string.h>
 
 static const double HALF_PI = 1.57079632679489661923;
 
@@ -36,8 +39,40 @@ static void check_filter(double gap, double v1, double v2, double t)
     }
 }
 
+/* Two pairs at x = s = 1 with first derivative 1/2 and second derivative
+ * q; p is zero.  A side whose q is huge has no usable angle, and only when
+ * both have none does the step drop the second derivative. */
+static void collapsed_arc_uses_first_derivative(void)
+{
+    double x[] = {1.0, 1.0}, s[] = {1.0, 1.0};
+    double half[] = {0.5, 0.5}, zero[] = {0.0, 0.0};
+    double huge[] = {-1e30, -1e30};
+    arc_ipm ipm;
+    memset(&ipm, 0, sizeof(ipm));
+    ipm.x = x;
+    ipm.s = s;
+    ipm.n_total = 2;
+    ipm.n_pairs = 2;
+    arc_search_rule r;
+    memset(&r, 0, sizeof(r));
+    r.nu = 1.0;
+    r.dot.x = half;
+    r.dot.s = half;
+    r.p.x = r.p.s = r.q.x = r.q.s = zero;
+    arc_angle a = arc_search_angle(&r, &ipm);
+    CHECK(a.curvature == 1.0 && a.alpha_x > 1.0 && a.alpha_s > 1.0);
+    r.q.x = huge;
+    a = arc_search_angle(&r, &ipm);
+    CHECK(a.curvature == 1.0 && a.alpha_x < ARC_STALL_ANGLE
+          && a.alpha_s > 1.0);
+    r.q.s = huge;
+    a = arc_search_angle(&r, &ipm);
+    CHECK(a.curvature == 0.0 && a.alpha_x > 1.0 && a.alpha_s > 1.0);
+}
+
 int main(void)
 {
+    collapsed_arc_uses_first_derivative();
     check_case(1.0, 0.0, -3.0);     /* case 1: no first-order motion   */
     check_case(1.0, 4.0, 0.0);      /* case 2: no second-order motion  */
     check_case(1.0, 2.0, 0.5);      /* case 3                          */

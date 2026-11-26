@@ -6,7 +6,8 @@
  * Each side then takes its own bound at that sigma as its angle, without
  * the halving of Step 2 of Algorithm 5.1 that keeps mu falling: on an
  * infeasible problem mu must rise while the dual moves off towards the
- * certificate.
+ * certificate.  A second derivative too large for any angle falls back to
+ * a step along the first derivative.
  */
 #include "arc_bounds.h"
 
@@ -28,12 +29,34 @@ static double usable(double angle)
     return arc_fmin(ANGLE_SHRINK * angle, ANGLE_CAP_FRACTION * HALF_PI);
 }
 
+/* The bound a side keeps: a share of its smallest entry, at most nu. */
+static double floor_of(const arc_search_rule *r, const arc_ipm *ipm,
+                       const double *v)
+{
+    return arc_fmin(RHO * arc_min(ipm->n_pairs, v + ipm->n_free), r->nu);
+}
+
+/* The largest angles along the first derivative alone. */
+static arc_angle first_order(const arc_search_rule *r, const arc_ipm *ipm,
+                             double phi, double psi)
+{
+    double ax = HALF_PI;
+    double as = HALF_PI;
+    for (int i = ipm->n_free; i < ipm->n_total; i++)
+    {
+        ax = arc_fmin(ax, arc_component_angle(ipm->x[i] - phi, r->dot.x[i],
+                                              0.0));
+        as = arc_fmin(as, arc_component_angle(ipm->s[i] - psi, r->dot.s[i],
+                                              0.0));
+    }
+    const arc_angle result = {usable(ax), usable(as), 0.0, 0.0};
+    return result;
+}
+
 arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
 {
-    const double phi = arc_fmin(RHO * arc_min(ipm->n_pairs, ipm->x + ipm->n_free),
-                                r->nu);
-    const double psi = arc_fmin(r->nu, RHO * arc_min(ipm->n_pairs,
-                                                       ipm->s + ipm->n_free));
+    const double phi = floor_of(r, ipm, ipm->x);
+    const double psi = floor_of(r, ipm, ipm->s);
     double lower = SIGMA_MIN;
     double upper = SIGMA_MAX;
     double sigma = lower;
@@ -52,6 +75,11 @@ arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
             upper = sigma;
         }
     }
-    const arc_angle result = {usable(b.x.angle), usable(b.s.angle), sigma};
+    const arc_angle result = {usable(b.x.angle), usable(b.s.angle), sigma,
+                              1.0};
+    if (arc_fmax(result.alpha_x, result.alpha_s) < ARC_STALL_ANGLE)
+    {
+        return first_order(r, ipm, phi, psi);
+    }
     return result;
 }

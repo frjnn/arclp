@@ -28,21 +28,28 @@ typedef struct
     double *work;       /* n scratch                              */
     double *work_p;     /* n scratch                              */
     double *target;     /* complementarity targets, all pairs     */
-    double nu;          /* prod (1 - sin) of the smaller angles    */
+    double nu;          /* prod (1 - sin) of the smaller angles   */
     double alpha;       /* larger of the last two side angles     */
 } arc_search_rule;
 
+/* Angles below this no longer move the iterate. */
+#define ARC_STALL_ANGLE 1e-8
+
 typedef struct
 {
-    double alpha_x; /* angle of x and w    */
-    double alpha_s; /* angle of y, s and z */
+    double alpha_x;   /* angle of x and w                               */
+    double alpha_s;   /* angle of y, s and z                            */
     double sigma;
+    double curvature; /* 1, or 0 to move along the first derivative only */
 } arc_angle;
 
 /* Computes dot, p and q from the factorized normal equations. */
 void arc_search_directions(arc_search_rule *rule, arc_ipm *ipm);
 
-/* sigma by Algorithm 6.1, and the largest angle of each side there. */
+/* sigma by Algorithm 6.1, and the largest angle of each side there.  When
+ * the second derivative is so large that both angles collapse, as can
+ * happen just before convergence, the largest angles along the first
+ * derivative alone instead. */
 arc_angle arc_search_angle(const arc_search_rule *rule, const arc_ipm *ipm);
 
 /* Largest angle in (0, pi/2] keeping
