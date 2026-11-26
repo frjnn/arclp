@@ -57,11 +57,23 @@ static void figure_two_example(void)
     }
 }
 
-static arclp_status solve_raw(const arclp_problem *lp, arclp_method method)
+/* The status of lp for every method, with and without presolve.  Arc-search
+ * moves x and s by one angle, which can collapse before it certifies either
+ * case: it may stall, but never claim the wrong one. */
+static void expect_status(const arclp_problem *lp, arclp_status expected)
 {
-    const arclp_options o = options(method, 0);
-    double x[4];
-    return arclp_solve(lp, &o, x, NULL);
+    for (int presolve = 0; presolve <= 1; presolve++)
+    {
+        for (int k = 0; k < 2; k++)
+        {
+            const arclp_options o = options(METHODS[k], presolve);
+            double x[4];
+            const arclp_status s = arclp_solve(lp, &o, x, NULL);
+            CHECK(s == expected
+                  || (METHODS[k] == ARCLP_METHOD_ARC_SEARCH
+                      && s == ARCLP_STALLED));
+        }
+    }
 }
 
 static void infeasible_and_unbounded(void)
@@ -76,11 +88,16 @@ static void infeasible_and_unbounded(void)
     const int i2[] = {0, 0};
     const double v2[] = {1, -1}, b2[] = {1}, c2[] = {-1, 0};
     const arclp_problem unbounded = {1, 2, p2, i2, v2, b2, c2, NULL, NULL};
-    for (int k = 0; k < 2; k++)
-    {
-        CHECK(solve_raw(&infeasible, METHODS[k]) != ARCLP_OPTIMAL);
-        CHECK(solve_raw(&unbounded, METHODS[k]) != ARCLP_OPTIMAL);
-    }
+    /* min -x1  s.t.  x2 + x3 = -1: x1 lowers the cost without limit, but
+     * no x >= 0 is feasible. */
+    const int p3[] = {0, 0, 1, 2};
+    const int i3[] = {0, 0};
+    const double v3[] = {1, 1}, b3[] = {-1}, c3[] = {-1, 0, 0};
+    const arclp_problem ray_but_infeasible = {1, 3, p3, i3, v3, b3, c3, NULL,
+                                              NULL};
+    expect_status(&infeasible, ARCLP_INFEASIBLE);
+    expect_status(&unbounded, ARCLP_UNBOUNDED);
+    expect_status(&ray_but_infeasible, ARCLP_INFEASIBLE);
 }
 
 /* A 1 x 1 problem with the given data is rejected. */

@@ -98,8 +98,9 @@ static arclp_status presolve_status(arc_presolve_status s)
     return map[s];
 }
 
-static arclp_status solve(const arclp_problem *p, const arclp_options *o,
-                          double *x, arclp_info *info)
+static arclp_status solve_once(const arclp_problem *p,
+                               const arclp_options *o, double *x,
+                               arclp_info *info)
 {
     const double start = arc_seconds();
     const arc_csc a = {p->m, p->n, p->col_ptr, p->row_idx, p->values};
@@ -122,6 +123,38 @@ static arclp_status solve(const arclp_problem *p, const arclp_options *o,
         free(xr);
     }
     arc_presolve_free(&ps);
+    return status;
+}
+
+/* A ray along which the cost falls only proves the dual infeasible: the
+ * problem is unbounded when it is also feasible, which a solve without the
+ * cost decides.  Any other outcome of that solve is reported as it is. */
+static arclp_status confirm_unbounded(const arclp_problem *p,
+                                      const arclp_options *o, double *x,
+                                      arclp_info *info)
+{
+    double *zero = calloc((size_t)p->n + 1, sizeof(double));
+    if (zero == NULL)
+    {
+        return ARCLP_OUT_OF_MEMORY;
+    }
+    arclp_problem feasibility = *p;
+    feasibility.c = zero;
+    const int iterations = info->iterations;
+    const arclp_status status = solve_once(&feasibility, o, x, info);
+    info->iterations += iterations;
+    free(zero);
+    return status == ARCLP_OPTIMAL ? ARCLP_UNBOUNDED : status;
+}
+
+static arclp_status solve(const arclp_problem *p, const arclp_options *o,
+                          double *x, arclp_info *info)
+{
+    arclp_status status = solve_once(p, o, x, info);
+    if (status == ARCLP_UNBOUNDED)
+    {
+        status = confirm_unbounded(p, o, x, info);
+    }
     const int usable = status == ARCLP_OPTIMAL || status == ARCLP_STALLED
                     || status == ARCLP_MAX_ITERATIONS;
     info->objective = usable ? arc_dot(p->n, p->c, x) : NAN;

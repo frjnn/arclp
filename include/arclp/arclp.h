@@ -36,7 +36,8 @@ extern "C"
     {
         ARCLP_OPTIMAL = 0,
         ARCLP_INFEASIBLE = 1,
-        ARCLP_UNBOUNDED = 2,
+        ARCLP_UNBOUNDED = 2, /* feasible, with a cost that falls without
+                              * limit                                  */
         ARCLP_MAX_ITERATIONS = 3,
         ARCLP_INVALID_INPUT = 4, /* malformed matrix or non-finite data   */
         ARCLP_OUT_OF_MEMORY = 5,
@@ -63,7 +64,8 @@ extern "C"
     typedef struct
     {
         arclp_status status;
-        int iterations;
+        int iterations;       /* also those of the zero-cost solve that
+                               * checks a ray for feasibility               */
         double objective;     /* c'x of the original problem                 */
         double infeasibility; /* ||A x - b|| of the reduced problem          */
         int reduced_rows;     /* size of the problem after presolve          */
