@@ -16,6 +16,8 @@ typedef struct
     arc_bound minus; /* components whose second derivative falls with sigma */
     arc_bound plus;  /* components whose second derivative grows with sigma */
     arc_bound all;   /* every component                                    */
+    arc_bound x;     /* components of x and w                              */
+    arc_bound s;     /* components of s and z                              */
 } arc_bounds;
 
 arc_bounds arc_bounds_at(const arc_search_rule *r, const arc_ipm *ipm,

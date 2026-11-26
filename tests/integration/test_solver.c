@@ -57,9 +57,7 @@ static void figure_two_example(void)
     }
 }
 
-/* The status of lp for every method, with and without presolve.  Arc-search
- * moves x and s by one angle, which can collapse before it certifies either
- * case: it may stall, but never claim the wrong one. */
+/* The status of lp for every method, with and without presolve. */
 static void expect_status(const arclp_problem *lp, arclp_status expected)
 {
     for (int presolve = 0; presolve <= 1; presolve++)
@@ -68,10 +66,7 @@ static void expect_status(const arclp_problem *lp, arclp_status expected)
         {
             const arclp_options o = options(METHODS[k], presolve);
             double x[4];
-            const arclp_status s = arclp_solve(lp, &o, x, NULL);
-            CHECK(s == expected
-                  || (METHODS[k] == ARCLP_METHOD_ARC_SEARCH
-                      && s == ARCLP_STALLED));
+            CHECK(arclp_solve(lp, &o, x, NULL) == expected);
         }
     }
 }

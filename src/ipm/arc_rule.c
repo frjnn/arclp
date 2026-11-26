@@ -1,5 +1,7 @@
 #include "arc_search.h"
 
+#include "util/vec.h"
+
 #include <math.h>
 
 static const double STALL_ANGLE = 1e-8;
@@ -25,13 +27,13 @@ static void init(arc_step_rule *self)
 
 /* v := v - dot sin(alpha) + (sigma p + q)(1 - cos(alpha)) */
 static void move(int len, double *v, const double *dot, const double *p,
-                 const double *q, arc_angle a)
+                 const double *q, double alpha, double sigma)
 {
-    const double sa = sin(a.alpha);
-    const double ca = 1.0 - cos(a.alpha);
+    const double sa = sin(alpha);
+    const double ca = 1.0 - cos(alpha);
     for (int i = 0; i < len; i++)
     {
-        v[i] += -dot[i] * sa + (a.sigma * p[i] + q[i]) * ca;
+        v[i] += -dot[i] * sa + (sigma * p[i] + q[i]) * ca;
     }
 }
 
@@ -40,11 +42,11 @@ static void arc_step(arc_step_rule *self, arc_ipm *ipm)
     arc_search_rule *r = (arc_search_rule *)self;
     arc_search_directions(r, ipm);
     const arc_angle a = arc_search_angle(r, ipm);
-    move(ipm->m, ipm->y, r->dot.y, r->p.y, r->q.y, a);
-    move(ipm->n_total, ipm->s, r->dot.s, r->p.s, r->q.s, a);
-    move(ipm->n_total, ipm->x, r->dot.x, r->p.x, r->q.x, a);
-    r->nu *= 1.0 - sin(a.alpha);
-    r->alpha = a.alpha;
+    move(ipm->m, ipm->y, r->dot.y, r->p.y, r->q.y, a.alpha_s, a.sigma);
+    move(ipm->n_total, ipm->s, r->dot.s, r->p.s, r->q.s, a.alpha_s, a.sigma);
+    move(ipm->n_total, ipm->x, r->dot.x, r->p.x, r->q.x, a.alpha_x, a.sigma);
+    r->nu *= 1.0 - sin(arc_fmin(a.alpha_x, a.alpha_s));
+    r->alpha = arc_fmax(a.alpha_x, a.alpha_s);
 }
 
 static int arc_stalled(const arc_step_rule *self, const arc_ipm *ipm)

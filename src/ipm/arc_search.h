@@ -4,7 +4,11 @@
  *     v(alpha) = v - v' sin(alpha) + v''(sigma) (1 - cos(alpha)),
  * where v' solves the Newton system for the residuals and
  * v''(sigma) = sigma p + q is the second-order term, linear in the
- * centering parameter sigma.
+ * centering parameter sigma.  Unlike Algorithm 5.1, x and (y, s) move by
+ * separate angles, each the largest its own side allows, as Mehrotra's
+ * rule uses separate primal and dual step lengths: on an infeasible
+ * problem only the dual can keep moving towards the certificate, while one
+ * shared angle collapses.
  */
 #ifndef ARC_SEARCH_H
 #define ARC_SEARCH_H
@@ -24,20 +28,21 @@ typedef struct
     double *work;       /* n scratch                              */
     double *work_p;     /* n scratch                              */
     double *target;     /* complementarity targets, all pairs     */
-    double nu;          /* nu_k = prod (1 - sin alpha_j)          */
-    double alpha;       /* last accepted angle                    */
+    double nu;          /* prod (1 - sin) of the smaller angles    */
+    double alpha;       /* larger of the last two side angles     */
 } arc_search_rule;
 
 typedef struct
 {
-    double alpha;
+    double alpha_x; /* angle of x and w    */
+    double alpha_s; /* angle of y, s and z */
     double sigma;
 } arc_angle;
 
 /* Computes dot, p and q from the factorized normal equations. */
 void arc_search_directions(arc_search_rule *rule, arc_ipm *ipm);
 
-/* Algorithm 6.1 plus the duality-measure safeguard and rescaling. */
+/* sigma by Algorithm 6.1, and the largest angle of each side there. */
 arc_angle arc_search_angle(const arc_search_rule *rule, const arc_ipm *ipm);
 
 /* Largest angle in (0, pi/2] keeping

@@ -1,6 +1,6 @@
 /*
  * Step-angle bounds for one centering parameter sigma (Algorithm 6.1,
- * Step 2).  Each running minimum keeps its trigonometry, so a component
+ * Step 2), over all components and over each side.  Each running minimum keeps its trigonometry, so a component
  * that provably cannot lower it is skipped without evaluating arcsines;
  * the minimum only changes O(log n) times per pass.
  */
@@ -21,18 +21,21 @@ static inline void lower(arc_bound *b, double angle)
     }
 }
 
-/* dp is the sigma-derivative of the component's second-order term. */
-static inline void consider(arc_bounds *b, double gap, double v1, double v2,
-                            double dp)
+/* dp is the sigma-derivative of the component's second-order term; side is
+ * the bound of the component's own side, x or s. */
+static inline void consider(arc_bounds *b, arc_bound *side, double gap,
+                            double v1, double v2, double dp)
 {
     arc_bound *relevant = dp < 0.0   ? &b->minus
                           : dp > 0.0 ? &b->plus
                                      : &b->all;
-    if (!arc_angle_may_be_below(gap, v1, v2, relevant->trig))
+    if (!arc_angle_may_be_below(gap, v1, v2, relevant->trig)
+        && !arc_angle_may_be_below(gap, v1, v2, side->trig))
     {
         return;
     }
     const double angle = arc_component_angle(gap, v1, v2);
+    lower(side, angle);
     lower(&b->all, angle);
     if (dp < 0.0)
     {
@@ -50,9 +53,9 @@ static ARC_ALWAYS_INLINE void scan(arc_bounds *b, const arc_search_rule *r,
 {
     for (int i = lo; i < hi; i++)
     {
-        consider(b, ipm->x[i] - phi, r->dot.x[i],
+        consider(b, &b->x, ipm->x[i] - phi, r->dot.x[i],
                  sigma * r->p.x[i] + r->q.x[i], r->p.x[i]);
-        consider(b, ipm->s[i] - psi, r->dot.s[i],
+        consider(b, &b->s, ipm->s[i] - psi, r->dot.s[i],
                  sigma * r->p.s[i] + r->q.s[i], r->p.s[i]);
     }
 }
@@ -65,6 +68,8 @@ static void merge(arc_bounds *into, const arc_bounds *part)
     lower(&into->all, part->all.angle);
     lower(&into->minus, part->minus.angle);
     lower(&into->plus, part->plus.angle);
+    lower(&into->x, part->x.angle);
+    lower(&into->s, part->s.angle);
 }
 
 /* One slice of components per thread, each with its own minima, merged at
@@ -74,12 +79,12 @@ static arc_bounds parallel_bounds(const arc_search_rule *r,
                                   const arc_ipm *ipm, double sigma,
                                   double phi, double psi)
 {
-    arc_bounds b = {QUARTER, QUARTER, QUARTER};
+    arc_bounds b = {QUARTER, QUARTER, QUARTER, QUARTER, QUARTER};
 #pragma omp parallel
     {
         const long threads = omp_get_num_threads();
         const long t = omp_get_thread_num();
-        arc_bounds part = {QUARTER, QUARTER, QUARTER};
+        arc_bounds part = {QUARTER, QUARTER, QUARTER, QUARTER, QUARTER};
         scan(&part, r, ipm, sigma, phi, psi,
              ipm->n_free + (int)(ipm->n_pairs * t / threads),
              ipm->n_free + (int)(ipm->n_pairs * (t + 1) / threads));
@@ -99,7 +104,7 @@ arc_bounds arc_bounds_at(const arc_search_rule *r, const arc_ipm *ipm,
         return parallel_bounds(r, ipm, sigma, phi, psi);
     }
 #endif
-    arc_bounds b = {QUARTER, QUARTER, QUARTER};
+    arc_bounds b = {QUARTER, QUARTER, QUARTER, QUARTER, QUARTER};
     scan(&b, r, ipm, sigma, phi, psi, ipm->n_free, ipm->n_total);
     return b;
 }

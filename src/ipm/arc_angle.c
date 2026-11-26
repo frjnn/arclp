@@ -3,6 +3,10 @@
  * largest angle keeping x >= phi and s >= psi follows in closed form per
  * component; sigma is bisected (Algorithm 6.1) to balance the components
  * whose second derivative decreases with sigma against those that grow.
+ * Each side then takes its own bound at that sigma as its angle, without
+ * the halving of Step 2 of Algorithm 5.1 that keeps mu falling: on an
+ * infeasible problem mu must rise while the dual moves off towards the
+ * certificate.
  */
 #include "arc_bounds.h"
 
@@ -17,31 +21,11 @@ static const double SIGMA_MAX = 0.3;
 static const double SIGMA_WIDTH = 1e-4; /* sqrt(1e-8) in arcLP.m */
 static const double ANGLE_SHRINK = 0.999;
 static const double ANGLE_CAP_FRACTION = 0.99;
-static const double SMALLEST_ANGLE = 1e-300;
 
-/* Halves alpha until mu(sigma, alpha) < mu (Step 2 of Algorithm 5.1). */
-static double reduce_for_mu(const arc_search_rule *r, const arc_ipm *ipm,
-                            double alpha, double sigma)
+/* An angle a little inside the boundary, and short of a quarter turn. */
+static double usable(double angle)
 {
-    const int n = ipm->n_total; /* free entries of s are 0 */
-    const int pairs = ipm->n_pairs;
-    const double a1 = arc_dot(n, r->dot.x, r->dot.s) / pairs;
-    const double a2 = (arc_dot(n, r->dot.x, r->q.s) + arc_dot(n, r->dot.s, r->q.x)) / pairs;
-    const double a3 = (arc_dot(n, r->dot.x, r->p.s) + arc_dot(n, r->dot.s, r->p.x)) / pairs;
-    const double mu = ipm->mu;
-    while (alpha > SMALLEST_ANGLE)
-    {
-        const double sa = sin(alpha);
-        const double ca = 1.0 - cos(alpha);
-        const double mu_alpha =
-            mu * (1.0 - sa) + ca * ((mu - a3 * sa) * sigma - a1 * ca - a2 * sa);
-        if (mu > mu_alpha)
-        {
-            break;
-        }
-        alpha *= 0.5;
-    }
-    return alpha;
+    return arc_fmin(ANGLE_SHRINK * angle, ANGLE_CAP_FRACTION * HALF_PI);
 }
 
 arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
@@ -54,7 +38,7 @@ arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
     double upper = SIGMA_MAX;
     double sigma = lower;
     const arc_bound quarter = {HALF_PI, {1.0, 0.0, 1.0}};
-    arc_bounds b = {quarter, quarter, quarter};
+    arc_bounds b = {quarter, quarter, quarter, quarter, quarter};
     while (upper - lower > SIGMA_WIDTH)
     {
         sigma = lower + 0.5 * (upper - lower);
@@ -68,11 +52,6 @@ arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
             upper = sigma;
         }
     }
-    double alpha = arc_fmin(arc_fmin(b.minus.angle, b.plus.angle),
-                            b.all.angle);
-    alpha = reduce_for_mu(r, ipm, alpha, sigma);
-    const arc_angle result = {arc_fmin(ANGLE_SHRINK * alpha,
-                                       ANGLE_CAP_FRACTION * HALF_PI),
-                              sigma};
+    const arc_angle result = {usable(b.x.angle), usable(b.s.angle), sigma};
     return result;
 }
