@@ -79,13 +79,8 @@ void amd_finalize_element(amd_state *s, amd_pivot *e)
         int d = s->degree[i] + e->degree - nvi;
         const int bound = s->n - s->eliminated - nvi;
         d = d < bound ? d : bound;
-        if (s->head[d] != -1)
-        {
-            s->last[s->head[d]] = i;
-        }
-        s->next[i] = s->head[d];
+        amd_file_by_degree(s, i, d);
         s->last[i] = -1;
-        s->head[d] = i;
         s->mindeg = s->mindeg < d ? s->mindeg : d;
         s->degree[i] = d;
         s->ci[p++] = i;

@@ -35,6 +35,8 @@ int amd_init(amd_state *s, int n, const int *gp, const int *gi);
 void amd_free(amd_state *s);
 int amd_clear_marks(amd_state *s, int mark);
 
+/* Puts variable i first in the list of degree d (its `last` is untouched). */
+void amd_file_by_degree(amd_state *s, int i, int d);
 void amd_unlink_degree(amd_state *s, int i);
 amd_pivot amd_select_pivot(amd_state *s);
 void amd_compact(amd_state *s);

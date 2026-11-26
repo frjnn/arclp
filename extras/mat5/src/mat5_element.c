@@ -58,21 +58,29 @@ size_t mat_count(const mat_element *el)
 
 static double convert(uint32_t type, const uint8_t *p)
 {
-    int8_t i8; uint8_t u8; int16_t i16; uint16_t u16; int32_t i32;
-    uint32_t u32; float f; double d; int64_t i64; uint64_t u64;
+#define CONVERT(code, ctype)                                                \
+    case code: {                                                            \
+        ctype value;                                                        \
+        memcpy(&value, p, sizeof(value));                                   \
+        return (double)value;                                               \
+    }
     switch (type)
     {
-    case MI_INT8: memcpy(&i8, p, 1); return i8;
-    case MI_UINT8: memcpy(&u8, p, 1); return u8;
-    case MI_INT16: memcpy(&i16, p, 2); return i16;
-    case MI_UINT16: memcpy(&u16, p, 2); return u16;
-    case MI_INT32: memcpy(&i32, p, 4); return i32;
-    case MI_UINT32: memcpy(&u32, p, 4); return u32;
-    case MI_SINGLE: memcpy(&f, p, 4); return f;
-    case MI_INT64: memcpy(&i64, p, 8); return (double)i64;
-    case MI_UINT64: memcpy(&u64, p, 8); return (double)u64;
-    default: memcpy(&d, p, 8); return d;
+    CONVERT(MI_INT8, int8_t)
+    CONVERT(MI_UINT8, uint8_t)
+    CONVERT(MI_INT16, int16_t)
+    CONVERT(MI_UINT16, uint16_t)
+    CONVERT(MI_INT32, int32_t)
+    CONVERT(MI_UINT32, uint32_t)
+    CONVERT(MI_SINGLE, float)
+    CONVERT(MI_INT64, int64_t)
+    CONVERT(MI_UINT64, uint64_t)
+    default: break;
     }
+#undef CONVERT
+    double value;
+    memcpy(&value, p, sizeof(value));
+    return value;
 }
 
 int mat_to_doubles(const mat_element *el, double *out, size_t count)

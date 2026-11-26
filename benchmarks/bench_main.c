@@ -56,12 +56,9 @@ typedef struct
 static void run_problem(const bench_config *c, const paper_row *row,
                         bench_state *st)
 {
-    char path[4096], err[256];
-    snprintf(path, sizeof(path), "%s/lp_%s.mat", c->data_dir, row->name);
     mat_lp lp;
-    if (mat_lp_load(path, &lp, err, sizeof(err)) != 0)
+    if (mat_lp_load_named(c->data_dir, row->name, &lp) != 0)
     {
-        fprintf(stderr, "skipping %s: %s\n", row->name, err);
         return;
     }
     bench_result arc = {0}, mehrotra = {0};

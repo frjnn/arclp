@@ -15,6 +15,7 @@ add_library(arclp_objects OBJECT
     chol/etree.c
     chol/graph.c
     chol/numeric.c
+    chol/refine.c
     chol/solve.c
     chol/supernodes.c
     chol/symbolic.c
@@ -28,19 +29,27 @@ add_library(arclp_objects OBJECT
     ipm/arc_component.c
     ipm/arc_directions.c
     ipm/arc_rule.c
+    ipm/convergence.c
     ipm/ipm.c
     ipm/ipm_run.c
     ipm/mehrotra_directions.c
     ipm/mehrotra_length.c
     ipm/mehrotra_rule.c
+    ipm/newton.c
     ipm/start_point.c
+    ipm/step_rule.c
+    presolve/bounds.c
     presolve/presolve.c
     presolve/ps_matrix.c
     presolve/reduced.c
     presolve/rule_implied_free.c
+    presolve/rule_slack_bounds.c
     presolve/rules_basic.c
     presolve/substitutions.c
+    scale/scaling.c
     sparse/csc.c
+    transform/dualize.c
+    transform/stretch.c
     util/arena.c)
 
 set_target_properties(arclp_objects PROPERTIES

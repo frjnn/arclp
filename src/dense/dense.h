@@ -12,17 +12,22 @@
 void arc_dense_begin(void);
 void arc_dense_end(void);
 
-/* C := alpha A B' + beta C;  A is m x k, B is n x k. */
-void arc_gemm_nt(int m, int n, int k, double alpha, const double *a, int lda,
-                 const double *b, int ldb, double beta, double *c, int ldc);
+typedef enum
+{
+    ARC_PLAIN,
+    ARC_TRANSPOSED
+} arc_op;
 
-/* C := alpha A B + beta C;  A is m x k, B is k x n. */
-void arc_gemm_nn(int m, int n, int k, double alpha, const double *a, int lda,
-                 const double *b, int ldb, double beta, double *c, int ldc);
+typedef struct
+{
+    const double *x;
+    int ld;
+    arc_op op;
+} arc_factor;
 
-/* C := alpha A' B + beta C;  A is k x m, B is k x n. */
-void arc_gemm_tn(int m, int n, int k, double alpha, const double *a, int lda,
-                 const double *b, int ldb, double beta, double *c, int ldc);
+/* C := alpha op(A) op(B) + beta C;  C is m x n, the inner dimension is k. */
+void arc_gemm(int m, int n, int k, double alpha, arc_factor a, arc_factor b,
+              double beta, double *c, int ldc);
 
 /* Lower triangle of C := alpha A A' + beta C;  A is n x k. */
 void arc_syrk_ln(int n, int k, double alpha, const double *a, int lda,
@@ -32,11 +37,9 @@ void arc_syrk_ln(int n, int k, double alpha, const double *a, int lda,
 void arc_trsm_right_lt(int m, int n, const double *l, int ldl, double *b,
                        int ldb);
 
-/* X := L^{-1} X  and  X := L^{-T} X;  L is n x n, X is n x nrhs. */
-void arc_trsm_left_ln(int n, int nrhs, const double *l, int ldl, double *x,
-                      int ldx);
-void arc_trsm_left_lt(int n, int nrhs, const double *l, int ldl, double *x,
-                      int ldx);
+/* X := op(L)^{-1} X;  L is n x n lower triangular, X is n x nrhs. */
+void arc_trsm_left(arc_op op, int n, int nrhs, const double *l, int ldl,
+                   double *x, int ldx);
 
 /* In-place Cholesky of the m x n trapezoid A (m >= n): the top n x n block
  * becomes L11 and the rest A21 L11^{-T}.  A pivot of column j not

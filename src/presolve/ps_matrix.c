@@ -1,26 +1,19 @@
 #include "ps_matrix.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include "util/grow.h"
 
-static int grow(ps_matrix *a)
-{
-    const int capacity = a->capacity > 0 ? 2 * a->capacity : 64;
-    ps_entry *e = realloc(a->e, sizeof(ps_entry) * (size_t)capacity);
-    if (e == NULL)
-    {
-        return -1;
-    }
-    a->e = e;
-    a->capacity = capacity;
-    return 0;
-}
+#include <string.h>
 
 static int link(ps_matrix *a, int row, int col, double value)
 {
-    if (a->count == a->capacity && grow(a) != 0)
+    if (a->count == a->capacity)
     {
-        return -1;
+        const int capacity = arc_grown_capacity(a->capacity, a->count + 1, 64);
+        if (arc_resize(&a->e, (size_t)capacity, sizeof(*a->e)) != 0)
+        {
+            return -1;
+        }
+        a->capacity = capacity;
     }
     const int k = a->count++;
     const ps_entry entry = {row, col, a->row_head[row], a->col_head[col],
@@ -95,24 +88,18 @@ void ps_matrix_set(ps_matrix *a, int k, double value)
 
 void ps_matrix_drop_row(ps_matrix *a, int i)
 {
-    for (int k = a->row_head[i]; k != -1; k = a->e[k].next_in_row)
+    PS_FOR_ROW(a, k, i)
     {
-        if (ps_live(a, k))
-        {
-            a->col_len[a->e[k].col]--;
-        }
+        a->col_len[a->e[k].col]--;
     }
     a->row_alive[i] = 0;
 }
 
 void ps_matrix_drop_col(ps_matrix *a, int j)
 {
-    for (int k = a->col_head[j]; k != -1; k = a->e[k].next_in_col)
+    PS_FOR_COL(a, k, j)
     {
-        if (ps_live(a, k))
-        {
-            a->row_len[a->e[k].row]--;
-        }
+        a->row_len[a->e[k].row]--;
     }
     a->col_alive[j] = 0;
 }

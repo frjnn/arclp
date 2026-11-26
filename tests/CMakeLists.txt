@@ -19,6 +19,7 @@ arclp_add_test(test_ipm_driver unit/test_ipm_driver.c arclp_internal unit)
 arclp_add_test(test_cholesky unit/test_cholesky.c arclp_internal unit)
 arclp_add_test(test_presolve unit/test_presolve.c arclp_internal unit)
 arclp_add_test(test_solver integration/test_solver.c arclp::arclp integration)
+arclp_add_test(test_general integration/test_general.c arclp::arclp integration)
 
 find_package(Threads REQUIRED)
 arclp_add_test(test_concurrency integration/test_concurrency.c arclp::arclp

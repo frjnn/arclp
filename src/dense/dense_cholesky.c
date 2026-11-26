@@ -63,8 +63,10 @@ int arc_dense_cholesky(int m, int n, double *a, int lda, const double *floor,
     arc_syrk_ln(n2, n1, -1.0, left, lda, 1.0, right, lda);
     if (m - n1 > n2)
     {
-        arc_gemm_nt(m - n1 - n2, n2, n1, -1.0, left + n2, lda, left, lda, 1.0,
-                    right + n2, lda);
+        const arc_factor below = {left + n2, lda, ARC_PLAIN};
+        const arc_factor beside = {left, lda, ARC_TRANSPOSED};
+        arc_gemm(m - n1 - n2, n2, n1, -1.0, below, beside, 1.0, right + n2,
+                 lda);
     }
     replaced += arc_dense_cholesky(m - n1, n2, right, lda, floor + n1, huge);
     return replaced;

@@ -1,15 +1,52 @@
 #include "csc.h"
 
 #include "util/parallel.h"
+#include "util/vec.h"
 
 #include <math.h>
+#include <stddef.h>
+
+void arc_csc_index_rows(const arc_csc *a, const int *label, const int *skip,
+                        int *ptr, int *cols, int *pos, int *next)
+{
+    for (int r = 0; r <= a->m; r++)
+    {
+        ptr[r] = 0;
+    }
+    for (int j = 0; j < a->n; j++)
+    {
+        for (int k = a->p[j]; k < a->p[j + 1]; k++)
+        {
+            const int r = label != NULL ? label[a->i[k]] : a->i[k];
+            ptr[r + 1] += skip == NULL || skip[j] >= 0;
+        }
+    }
+    for (int r = 0; r < a->m; r++)
+    {
+        ptr[r + 1] += ptr[r];
+        next[r] = ptr[r];
+    }
+    for (int j = 0; j < a->n; j++)
+    {
+        if (skip != NULL && skip[j] < 0)
+        {
+            continue;
+        }
+        for (int k = a->p[j]; k < a->p[j + 1]; k++)
+        {
+            const int slot = next[label != NULL ? label[a->i[k]] : a->i[k]]++;
+            cols[slot] = j;
+            if (pos != NULL)
+            {
+                pos[slot] = k;
+            }
+        }
+    }
+}
 
 void arc_csc_mul(const arc_csc *a, const double *x, double *y)
 {
-    for (int r = 0; r < a->m; r++)
-    {
-        y[r] = 0.0;
-    }
+    arc_zero(a->m, y);
     for (int j = 0; j < a->n; j++)
     {
         const double xj = x[j];
@@ -38,11 +75,8 @@ void arc_csc_mul_t(const arc_csc *a, const double *y, double *x)
 void arc_csc_mul2(const arc_csc *a, const double *x1, const double *x2,
                   double *y1, double *y2)
 {
-    for (int r = 0; r < a->m; r++)
-    {
-        y1[r] = 0.0;
-        y2[r] = 0.0;
-    }
+    arc_zero(a->m, y1);
+    arc_zero(a->m, y2);
     for (int j = 0; j < a->n; j++)
     {
         const double u = x1[j];

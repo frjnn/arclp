@@ -17,7 +17,7 @@ int main(void)
     const double values[] = {1, 1, 1, 3, 1, 1};
     const double b[] = {4, 6};
     const double c[] = {-1, -2, 0, 0};
-    const arclp_problem problem = {2, 4, col_ptr, row_idx, values, b, c};
+    const arclp_problem problem = {2, 4, col_ptr, row_idx, values, b, c, NULL, NULL};
 
     arclp_options options;
     arclp_default_options(&options);

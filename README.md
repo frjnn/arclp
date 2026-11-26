@@ -76,7 +76,7 @@ target_link_libraries(app PRIVATE arclp::arclp)
 #include <arclp/arclp.h>
 
 /* A in compressed sparse column form */
-arclp_problem lp = {m, n, col_ptr, row_idx, values, b, c};
+arclp_problem lp = {m, n, col_ptr, row_idx, values, b, c, NULL, NULL};
 arclp_options opt;
 arclp_default_options(&opt);          /* arc-search, tol 1e-8, presolve on */
 arclp_info info;

@@ -4,6 +4,8 @@
 
 #include "dense/dense.h"
 
+#include <string.h>
+
 static double *random_block(int rows, int cols, unsigned *seed)
 {
     double *a = malloc(sizeof(double) * (size_t)rows * (size_t)cols);
@@ -43,41 +45,41 @@ static double max_diff(int len, const double *x, const double *y)
     return worst;
 }
 
-/* y = alpha A x + beta y and y = alpha A' x + beta y, x with `cols` columns. */
-static void check_products(int m, int k, int cols, unsigned *seed)
+/* y := alpha op(A) x + beta y for `cols` columns, one entry at a time; the
+ * stored A has leading dimension lda and op(A) is rows x inner. */
+static void naive_product(int trans, int rows, int inner, int cols,
+                          double alpha, const double *a, int lda,
+                          const double *x, double beta, double *y)
 {
-    double *a = random_block(m, k, seed);
-    double *x = random_block(k > m ? k : m, cols, seed);
-    double *y = random_block(m > k ? m : k, cols, seed);
-    double *expect = malloc(sizeof(double) * (size_t)(m > k ? m : k) * cols);
     for (int c = 0; c < cols; c++)
     {
-        for (int i = 0; i < m; i++)
+        for (int i = 0; i < rows; i++)
         {
             double sum = 0.0;
-            for (int p = 0; p < k; p++)
+            for (int p = 0; p < inner; p++)
             {
-                sum += a[i + p * m] * x[p + c * k];
+                sum += (trans ? a[p + i * lda] : a[i + p * lda])
+                     * x[p + c * inner];
             }
-            expect[i + c * m] = 2.0 * sum + 0.5 * y[i + c * m];
+            y[i + c * rows] = alpha * sum + beta * y[i + c * rows];
         }
     }
-    arc_gemm_nn(m, cols, k, 2.0, a, m, x, k, 0.5, y, m);
-    CHECK(max_diff(m * cols, y, expect) < 1e-12 * k);
-    for (int c = 0; c < cols; c++)
-    {
-        for (int j = 0; j < k; j++)
-        {
-            double sum = 0.0;
-            for (int p = 0; p < m; p++)
-            {
-                sum += a[p + j * m] * x[p + c * m];
-            }
-            expect[j + c * k] = -sum + y[j + c * k];
-        }
-    }
-    arc_gemm_tn(k, cols, m, -1.0, a, m, x, m, 1.0, y, k);
-    CHECK(max_diff(k * cols, y, expect) < 1e-12 * m);
+}
+
+static void check_product(int trans, int rows, int inner, int cols,
+                          double alpha, double beta, unsigned *seed)
+{
+    const int lda = trans ? inner : rows;
+    double *a = random_block(rows, inner, seed);
+    double *x = random_block(inner, cols, seed);
+    double *y = random_block(rows, cols, seed);
+    double *expect = malloc(sizeof(double) * (size_t)rows * cols);
+    memcpy(expect, y, sizeof(double) * (size_t)rows * cols);
+    naive_product(trans, rows, inner, cols, alpha, a, lda, x, beta, expect);
+    const arc_factor left = {a, lda, trans ? ARC_TRANSPOSED : ARC_PLAIN};
+    const arc_factor right = {x, inner, ARC_PLAIN};
+    arc_gemm(rows, cols, inner, alpha, left, right, beta, y, rows);
+    CHECK(max_diff(rows * cols, y, expect) < 1e-12 * inner);
     free(a); free(x); free(y); free(expect);
 }
 
@@ -86,29 +88,12 @@ static void check_triangular(int n, int cols, unsigned *seed)
 {
     double *l = random_lower(n, seed);
     double *x = random_block(n, cols, seed);
-    double *b = malloc(sizeof(double) * (size_t)n * cols);
+    double *b = calloc((size_t)n * (size_t)cols, sizeof(double));
     for (int trans = 0; trans <= 1; trans++)
     {
-        for (int c = 0; c < cols; c++)
-        {
-            for (int i = 0; i < n; i++)
-            {
-                double sum = 0.0;
-                for (int p = 0; p < n; p++)
-                {
-                    sum += (trans ? l[p + i * n] : l[i + p * n]) * x[p + c * n];
-                }
-                b[i + c * n] = sum;
-            }
-        }
-        if (trans)
-        {
-            arc_trsm_left_lt(n, cols, l, n, b, n);
-        }
-        else
-        {
-            arc_trsm_left_ln(n, cols, l, n, b, n);
-        }
+        naive_product(trans, n, n, cols, 1.0, l, n, x, 0.0, b);
+        arc_trsm_left(trans ? ARC_TRANSPOSED : ARC_PLAIN, n, cols, l, n, b,
+                      n);
         CHECK(max_diff(n * cols, b, x) < 1e-10);
     }
     free(l); free(x); free(b);
@@ -124,7 +109,10 @@ int main(void)
     {
         for (size_t c = 0; c < sizeof(columns) / sizeof(*columns); c++)
         {
-            check_products(sizes[s][0], sizes[s][1], columns[c], &seed);
+            const int m = sizes[s][0];
+            const int k = sizes[s][1];
+            check_product(0, m, k, columns[c], 2.0, 0.5, &seed);
+            check_product(1, k, m, columns[c], -1.0, 1.0, &seed);
             check_triangular(sizes[s][0], columns[c], &seed);
         }
     }

@@ -18,6 +18,9 @@ typedef struct
 /* Returns 0 on success; otherwise writes a message to err. */
 int mat_lp_load(const char *path, mat_lp *lp, char *err, size_t err_len);
 
+/* Loads DIR/lp_NAME.mat; on failure reports that NAME is skipped. */
+int mat_lp_load_named(const char *dir, const char *name, mat_lp *lp);
+
 void mat_lp_free(mat_lp *lp);
 
 #endif

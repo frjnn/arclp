@@ -44,4 +44,32 @@ static inline int ps_live(const ps_matrix *a, int k)
     return e->value != 0.0 && a->row_alive[e->row] && a->col_alive[e->col];
 }
 
+/* First live entry at or after k along a row (column) list, -1 at the end. */
+static inline int ps_live_in_row(const ps_matrix *a, int k)
+{
+    while (k != -1 && !ps_live(a, k))
+    {
+        k = a->e[k].next_in_row;
+    }
+    return k;
+}
+
+static inline int ps_live_in_col(const ps_matrix *a, int k)
+{
+    while (k != -1 && !ps_live(a, k))
+    {
+        k = a->e[k].next_in_col;
+    }
+    return k;
+}
+
+/* Visits the live entries of a row / column.  The body may delete the rows
+ * and columns it meets. */
+#define PS_FOR_ROW(a, k, i)                                                 \
+    for (int k = ps_live_in_row(a, (a)->row_head[i]); k != -1;              \
+         k = ps_live_in_row(a, (a)->e[k].next_in_row))
+#define PS_FOR_COL(a, k, j)                                                 \
+    for (int k = ps_live_in_col(a, (a)->col_head[j]); k != -1;              \
+         k = ps_live_in_col(a, (a)->e[k].next_in_col))
+
 #endif

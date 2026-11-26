@@ -13,6 +13,13 @@ typedef struct
     const double *x; /* values                */
 } arc_csc;
 
+/* Row-wise index of A: row label[r] (label NULL: r itself) holds the entries
+ * ptr[r] .. ptr[r+1], each with its column and, when pos is not NULL, its
+ * position in A; columns j with skip != NULL and skip[j] < 0 are left out.
+ * ptr has m + 1 entries, next m. */
+void arc_csc_index_rows(const arc_csc *a, const int *label, const int *skip,
+                        int *ptr, int *cols, int *pos, int *next);
+
 /* y := A x */
 void arc_csc_mul(const arc_csc *a, const double *x, double *y);
 

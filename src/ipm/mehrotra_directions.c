@@ -1,5 +1,6 @@
 #include "mehrotra_steps.h"
 
+#include "newton.h"
 #include "util/vec.h"
 
 #include <math.h>
@@ -22,45 +23,42 @@ static double ratio_test(int n, const double *v, const double *d)
 
 void mehrotra_affine(mehrotra_rule *r, arc_ipm *ipm)
 {
-    double *w = r->work;
-    for (int j = 0; j < ipm->n; j++)
-    {
-        w[j] = ipm->d[j] * ipm->rc[j];
-    }
-    arc_csc_mul(ipm->a, w, r->dy);
+    arc_newton_first_rhs(ipm, r->work);
+    arc_csc_mul(ipm->a, r->work, r->dy);
     arc_subtract(ipm->m, ipm->b, r->dy);
     arc_normal_solve(ipm->solver, r->dy, 1);
     arc_csc_mul_t(ipm->a, r->dy, r->ds);
-    for (int j = 0; j < ipm->n; j++)
+    arc_newton_first_recover(ipm, r->dx, r->ds);
+}
+
+/* (mu_aff / mu)^3 mu, with mu_aff after the largest affine steps. */
+static double centering_target(const mehrotra_rule *r, const arc_ipm *ipm)
+{
+    const int f = ipm->n_free;
+    const int pairs = ipm->n_pairs;
+    const double ax = ratio_test(pairs, ipm->x + f, r->dx + f);
+    const double as = ratio_test(pairs, ipm->s + f, r->ds + f);
+    double gap = 0.0;
+    for (int k = f; k < ipm->n_total; k++)
     {
-        r->ds[j] = ipm->rc[j] - r->ds[j];
-        r->dx[j] = ipm->x[j] - ipm->d[j] * r->ds[j];
+        gap += (ipm->x[k] - ax * r->dx[k]) * (ipm->s[k] - as * r->ds[k]);
     }
+    const double ratio = gap / pairs / ipm->mu;
+    return arc_fmin(ratio * ratio * ratio, MAX_CENTERING) * ipm->mu;
 }
 
 void mehrotra_corrector(mehrotra_rule *r, arc_ipm *ipm)
 {
-    const int n = ipm->n;
-    const double ax = ratio_test(n, ipm->x, r->dx);
-    const double as = ratio_test(n, ipm->s, r->ds);
-    double gap = 0.0;
-    for (int j = 0; j < n; j++)
+    const double target = centering_target(r, ipm);
+    for (int k = 0; k < ipm->n_total; k++)
     {
-        gap += (ipm->x[j] - ax * r->dx[j]) * (ipm->s[j] - as * r->ds[j]);
+        r->target[k] = target - 2.0 * r->dx[k] * r->ds[k];
     }
-    const double ratio = gap / n / ipm->mu;
-    const double target = arc_fmin(ratio * ratio * ratio, MAX_CENTERING) * ipm->mu;
     double *w = r->work;
-    for (int j = 0; j < n; j++)
-    {
-        w[j] = (2.0 * r->dx[j] * r->ds[j] - target) / ipm->s[j];
-    }
+    arc_newton_second_rhs(ipm, r->target, w);
     arc_csc_mul(ipm->a, w, r->ddy);
+    arc_negate(ipm->m, r->ddy);
     arc_normal_solve(ipm->solver, r->ddy, 1);
     arc_csc_mul_t(ipm->a, r->ddy, r->dds);
-    for (int j = 0; j < n; j++)
-    {
-        r->dds[j] = -r->dds[j];
-        r->ddx[j] = (target - ipm->x[j] * r->dds[j] - 2.0 * r->dx[j] * r->ds[j]) / ipm->s[j];
-    }
+    arc_newton_second_recover(ipm, r->target, w, r->ddx, r->dds);
 }

@@ -7,13 +7,11 @@
 typedef struct
 {
     arc_step_rule base;     /* must stay first */
-    int m, n;
     double *dx, *dy, *ds;   /* affine-scaling direction          */
     double *ddx, *ddy, *dds;/* centering-corrector direction     */
-    double *work;
+    double *work, *target;
     double step_x, step_s;
     int iteration;
-    arc_arena arena;
 } mehrotra_rule;
 
 /* Affine direction; same Newton system as the arc's first derivative. */

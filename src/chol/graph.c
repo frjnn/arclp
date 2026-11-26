@@ -1,35 +1,7 @@
 #include "graph.h"
 
+#include <limits.h>
 #include <stdlib.h>
-
-/* Row-wise pattern of A: rows[rp[r] .. rp[r+1]) lists the columns of row r. */
-static void transpose_pattern(const arc_csc *a, int *rp, int *cols)
-{
-    for (int r = 0; r <= a->m; r++)
-    {
-        rp[r] = 0;
-    }
-    for (int k = 0; k < a->p[a->n]; k++)
-    {
-        rp[a->i[k] + 1]++;
-    }
-    for (int r = 0; r < a->m; r++)
-    {
-        rp[r + 1] += rp[r];
-    }
-    for (int j = 0; j < a->n; j++)
-    {
-        for (int k = a->p[j]; k < a->p[j + 1]; k++)
-        {
-            cols[rp[a->i[k]]++] = j;
-        }
-    }
-    for (int r = a->m; r > 0; r--)
-    {
-        rp[r] = rp[r - 1];
-    }
-    rp[0] = 0;
-}
 
 /* Visits the neighbours of row r in A A'; writes them when out != NULL. */
 static int neighbours(const arc_csc *a, const int *rp, const int *cols,
@@ -65,6 +37,24 @@ static void reset(int *mark, int m)
     }
 }
 
+/* Row pointers of the pattern; 0 when its size exceeds an int. */
+static int count_neighbours(const arc_csc *a, const int *rp, const int *cols,
+                            int *mark, int *p)
+{
+    long total = 0;
+    p[0] = 0;
+    for (int r = 0; r < a->m; r++)
+    {
+        total += neighbours(a, rp, cols, r, mark, NULL);
+        if (total > INT_MAX - 1)
+        {
+            return 0;
+        }
+        p[r + 1] = (int)total;
+    }
+    return 1;
+}
+
 int arc_graph_of_aat(const arc_csc *a, arc_graph *g)
 {
     const int m = a->m;
@@ -81,14 +71,10 @@ int arc_graph_of_aat(const arc_csc *a, arc_graph *g)
         return -1;
     }
     int *mark = rp + m + 1;
-    transpose_pattern(a, rp, cols);
+    arc_csc_index_rows(a, NULL, NULL, rp, cols, NULL, mark);
     reset(mark, m);
-    g->p[0] = 0;
-    for (int r = 0; r < m; r++)
-    {
-        g->p[r + 1] = g->p[r] + neighbours(a, rp, cols, r, mark, NULL);
-    }
-    g->i = malloc(sizeof(int) * (size_t)(g->p[m] + 1));
+    const int fits = count_neighbours(a, rp, cols, mark, g->p);
+    g->i = fits ? malloc(sizeof(int) * (size_t)(g->p[m] + 1)) : NULL;
     if (g->i != NULL)
     {
         reset(mark, m);

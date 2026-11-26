@@ -7,139 +7,111 @@
 static const double EPSILON = 1e-8;
 static const double COST_TOLERANCE = 100.0 * 1e-8;
 
-static int proved(arc_presolve_status status)
-{
-    return -(int)status;
-}
-
 /* Rule 1: an empty row must have b_i = 0. */
-int arc_rule_empty_rows(arc_presolve *ps)
+int arc_rule_empty_row(arc_presolve *ps, int i)
 {
-    int changed = 0;
-    for (int i = ps->a.m - 1; i >= 0; i--)
+    if (ps->a.row_len[i] != 0)
     {
-        if (!ps->a.row_alive[i] || ps->a.row_len[i] != 0)
-        {
-            continue;
-        }
-        if (fabs(ps->b[i]) > EPSILON)
-        {
-            return proved(ARC_PRESOLVE_INFEASIBLE);
-        }
-        ps_matrix_drop_row(&ps->a, i);
-        changed = 1;
+        return 0;
     }
-    return changed;
+    if (fabs(ps->b[i]) > EPSILON)
+    {
+        return arc_ps_proved(ARC_PRESOLVE_INFEASIBLE);
+    }
+    ps_matrix_drop_row(&ps->a, i);
+    return 1;
 }
 
-/* Rule 3: an empty column is fixed at zero unless its cost is negative. */
-int arc_rule_empty_cols(arc_presolve *ps)
+/* Rule 3: an empty column sits at the bound its cost prefers. */
+int arc_rule_empty_col(arc_presolve *ps, int j)
 {
-    int changed = 0;
-    for (int j = ps->a.n - 1; j >= 0; j--)
+    if (ps->a.col_len[j] != 0)
     {
-        if (!ps->a.col_alive[j] || ps->a.col_len[j] != 0)
-        {
-            continue;
-        }
-        if (ps->c[j] < -COST_TOLERANCE)
-        {
-            return proved(ARC_PRESOLVE_UNBOUNDED);
-        }
-        ps_matrix_drop_col(&ps->a, j);
-        changed = 1;
+        return 0;
     }
-    return changed;
-}
-
-static int first_live(const ps_matrix *a, int i)
-{
-    int k = a->row_head[i];
-    while (k != -1 && !ps_live(a, k))
+    const int falls = ps->c[j] < -COST_TOLERANCE;
+    const int rises = ps->c[j] > COST_TOLERANCE;
+    if ((falls && isinf(ps->upper[j])) || (rises && ps->is_free[j]))
     {
-        k = a->e[k].next_in_row;
+        return arc_ps_proved(ARC_PRESOLVE_UNBOUNDED);
     }
-    return k;
+    arc_ps_fix(ps, j, falls ? ps->upper[j] : 0.0);
+    return 1;
 }
 
 /* Rule 5: a singleton row a_ij x_j = b_i fixes x_j. */
-int arc_rule_singleton_rows(arc_presolve *ps)
+int arc_rule_singleton_row(arc_presolve *ps, int i)
 {
     ps_matrix *a = &ps->a;
-    int changed = 0;
-    for (int i = a->m - 1; i >= 0; i--)
+    if (a->row_len[i] != 1)
     {
-        if (!a->row_alive[i] || a->row_len[i] != 1)
-        {
-            continue;
-        }
-        const ps_entry *pivot = &a->e[first_live(a, i)];
-        const int j = pivot->col;
-        const double xj = ps->b[i] / pivot->value;
-        if (xj < 0.0)
-        {
-            return proved(ARC_PRESOLVE_INFEASIBLE);
-        }
-        ps->fixed_x[j] = xj;
-        for (int k = a->col_head[j]; k != -1; k = a->e[k].next_in_col)
-        {
-            if (ps_live(a, k))
-            {
-                ps->b[a->e[k].row] -= a->e[k].value * xj;
-            }
-        }
-        ps_matrix_drop_col(a, j);
-        ps_matrix_drop_row(a, i);
-        changed = 1;
+        return 0;
     }
-    return changed;
+    const ps_entry *pivot = &a->e[ps_live_in_row(a, a->row_head[i])];
+    const int j = pivot->col;
+    const double xj = ps->b[i] / pivot->value;
+    if (!ps->is_free[j]
+        && (xj < -EPSILON || xj > ps->upper[j] + EPSILON * (1.0 + xj)))
+    {
+        return arc_ps_proved(ARC_PRESOLVE_INFEASIBLE);
+    }
+    arc_ps_fix(ps, j, ps->is_free[j] ? xj
+                                     : fmin(fmax(xj, 0.0), ps->upper[j]));
+    ps_matrix_drop_row(a, i);
+    return 1;
 }
 
-/* Drops row i and every column whose coefficient has the given sign;
- * those variables are forced to zero. */
-static void force_to_zero(ps_matrix *a, int i, int sign)
+/* Least and greatest value of row i over the bounds; -inf / +inf when a
+ * term is unbounded. */
+static arc_ps_interval activity(const arc_presolve *ps, int i)
 {
-    for (int k = a->row_head[i]; k != -1; k = a->e[k].next_in_row)
+    const ps_matrix *a = &ps->a;
+    arc_ps_interval range = {0.0, 0.0};
+    PS_FOR_ROW(a, k, i)
     {
-        if (ps_live(a, k) && (a->e[k].value > 0.0) == (sign > 0))
-        {
-            ps_matrix_drop_col(a, a->e[k].col);
-        }
+        const double v = a->e[k].value;
+        const arc_ps_interval x = arc_ps_bounds_of(ps, a->e[k].col);
+        const double low = v > 0.0 ? x.lower : x.upper;
+        const double high = v > 0.0 ? x.upper : x.lower;
+        range.lower += low != 0.0 ? v * low : 0.0;
+        range.upper += high != 0.0 ? v * high : 0.0;
+    }
+    return range;
+}
+
+/* Row i can only be met with every term at its extreme: fixes them all. */
+static void force(arc_presolve *ps, int i, int at_lowest)
+{
+    ps_matrix *a = &ps->a;
+    PS_FOR_ROW(a, k, i)
+    {
+        const int j = a->e[k].col;
+        const arc_ps_interval x = arc_ps_bounds_of(ps, j);
+        const int low = (a->e[k].value > 0.0) == at_lowest;
+        arc_ps_fix(ps, j, low ? x.lower : x.upper);
     }
     ps_matrix_drop_row(a, i);
 }
 
-/* Rule 7: rows whose coefficients share one sign. */
-int arc_rule_forcing_rows(arc_presolve *ps)
+/* Rule 7, extended to bounds: rows whose right-hand side is out of reach
+ * or exactly at the end of the reachable interval. */
+int arc_rule_forcing_row(arc_presolve *ps, int i)
 {
-    ps_matrix *a = &ps->a;
-    int changed = 0;
-    for (int i = a->m - 1; i >= 0; i--)
+    if (ps->a.row_len[i] == 0)
     {
-        if (!a->row_alive[i])
-        {
-            continue;
-        }
-        int positive = 0;
-        int negative = 0;
-        for (int k = a->row_head[i]; k != -1; k = a->e[k].next_in_row)
-        {
-            if (ps_live(a, k))
-            {
-                positive |= a->e[k].value > 0.0;
-                negative |= a->e[k].value < 0.0;
-            }
-        }
-        const double bi = ps->b[i];
-        if ((bi < 0.0 && !negative) || (bi > 0.0 && !positive))
-        {
-            return proved(ARC_PRESOLVE_INFEASIBLE);
-        }
-        if (bi == 0.0 && !(positive && negative))
-        {
-            force_to_zero(a, i, positive ? 1 : -1);
-            changed = 1;
-        }
+        return 0;
     }
-    return changed;
+    const arc_ps_interval range = activity(ps, i);
+    const double margin = EPSILON * (1.0 + fabs(ps->b[i]));
+    if (ps->b[i] < range.lower - margin || ps->b[i] > range.upper + margin)
+    {
+        return arc_ps_proved(ARC_PRESOLVE_INFEASIBLE);
+    }
+    const int at_lowest = ps->b[i] == range.lower;
+    if (!at_lowest && ps->b[i] != range.upper)
+    {
+        return 0;
+    }
+    force(ps, i, at_lowest);
+    return 1;
 }

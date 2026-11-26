@@ -23,7 +23,8 @@ const char *arclp_status_name(arclp_status status)
 {
     static const char *const names[] = {"optimal", "infeasible", "unbounded",
                                         "iteration limit", "invalid input",
-                                        "out of memory", "numerical error"};
+                                        "out of memory", "numerical error",
+                                        "stalled"};
     const unsigned k = (unsigned)status;
     return k < sizeof(names) / sizeof(*names) ? names[k] : "unknown";
 }
@@ -33,6 +34,21 @@ static int all_finite(const double *v, int len)
     for (int k = 0; k < len; k++)
     {
         if (!isfinite(v[k]))
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* lower < +inf, upper > -inf and no NaN; crossed bounds are for presolve. */
+static int valid_bounds(const arclp_problem *p)
+{
+    for (int j = 0; j < p->n; j++)
+    {
+        const double lower = p->lower != NULL ? p->lower[j] : 0.0;
+        const double upper = p->upper != NULL ? p->upper[j] : INFINITY;
+        if (!(lower < INFINITY && upper > -INFINITY))
         {
             return 0;
         }
@@ -61,7 +77,7 @@ static int valid_matrix(const arclp_problem *p)
         }
     }
     return all_finite(p->values, p->col_ptr[p->n]) && all_finite(p->b, p->m)
-        && all_finite(p->c, p->n);
+        && all_finite(p->c, p->n) && valid_bounds(p);
 }
 
 static int valid(const arclp_problem *p, const arclp_options *o, double *x)
@@ -89,16 +105,16 @@ static arclp_status solve(const arclp_problem *p, const arclp_options *o,
     const arc_csc a = {p->m, p->n, p->col_ptr, p->row_idx, p->values};
     arc_presolve ps;
     arclp_status status =
-        presolve_status(arc_presolve_run(&ps, &a, p->b, p->c, o->presolve));
+        presolve_status(arc_presolve_run(&ps, &a, p->b, p->c, p->lower,
+                                         p->upper, o->presolve));
     info->seconds_presolve = arc_seconds() - start;
     if (status == ARCLP_OPTIMAL)
     {
-        info->reduced_rows = ps.reduced.m;
-        info->reduced_cols = ps.reduced.n;
-        double *xr = malloc(sizeof(double) * (size_t)(ps.reduced.n + 1));
+        info->reduced_rows = ps.reduced.a.m;
+        info->reduced_cols = ps.reduced.a.n;
+        double *xr = malloc(sizeof(double) * (size_t)(ps.reduced.a.n + 1));
         status = xr == NULL ? ARCLP_OUT_OF_MEMORY
-                            : arc_solve_reduced(&ps.reduced, ps.reduced_b,
-                                                ps.reduced_c, o, xr, info);
+                            : arc_solve_reduced(&ps.reduced, o, xr, info);
         if (xr != NULL)
         {
             arc_postsolve(&ps, xr, x);
@@ -106,7 +122,9 @@ static arclp_status solve(const arclp_problem *p, const arclp_options *o,
         free(xr);
     }
     arc_presolve_free(&ps);
-    info->objective = status == ARCLP_OPTIMAL ? arc_dot(p->n, p->c, x) : NAN;
+    const int usable = status == ARCLP_OPTIMAL || status == ARCLP_STALLED
+                    || status == ARCLP_MAX_ITERATIONS;
+    info->objective = usable ? arc_dot(p->n, p->c, x) : NAN;
     return status;
 }
 

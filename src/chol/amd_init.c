@@ -13,16 +13,6 @@ static int dense_threshold(int n)
     return dense < n - 2 ? dense : n - 2;
 }
 
-static void place_in_degree_list(amd_state *s, int i, int d)
-{
-    if (s->head[d] != -1)
-    {
-        s->last[s->head[d]] = i;
-    }
-    s->next[i] = s->head[d];
-    s->head[d] = i;
-}
-
 /* Empty variables are eliminated at once; dense ones are absorbed into the
  * placeholder element n and ordered last. */
 static void classify_variables(amd_state *s)
@@ -48,7 +38,7 @@ static void classify_variables(amd_state *s)
         }
         else
         {
-            place_in_degree_list(s, i, d);
+            amd_file_by_degree(s, i, d);
         }
     }
 }

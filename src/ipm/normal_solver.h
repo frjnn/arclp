@@ -20,6 +20,8 @@ typedef struct
     int (*factor)(arc_normal_solver *self, const double *d);
     /* Overwrites the m-by-nrhs column-major block r with (A D A')^{-1} r. */
     void (*solve)(arc_normal_solver *self, double *r, int nrhs);
+    /* Turns the refinement of solves on or off (on at the start). */
+    void (*refine)(arc_normal_solver *self, int enabled);
     void (*stats)(const arc_normal_solver *self, arc_normal_stats *out);
     void (*destroy)(arc_normal_solver *self);
 } arc_normal_solver_ops;
@@ -37,6 +39,11 @@ static inline int arc_normal_factor(arc_normal_solver *s, const double *d)
 static inline void arc_normal_solve(arc_normal_solver *s, double *r, int nrhs)
 {
     s->ops->solve(s, r, nrhs);
+}
+
+static inline void arc_normal_refine(arc_normal_solver *s, int enabled)
+{
+    s->ops->refine(s, enabled);
 }
 
 static inline void arc_normal_destroy(arc_normal_solver *s)

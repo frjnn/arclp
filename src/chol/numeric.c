@@ -2,6 +2,7 @@
 
 #include "dense/dense.h"
 #include "util/parallel.h"
+#include "util/vec.h"
 
 #include <string.h>
 
@@ -9,8 +10,9 @@ static const double HUGE_PIVOT = 1e128;
 /* Chosen on the Netlib benchmark. */
 static const double DEFAULT_PIVOT_TOLERANCE = 1e-14;
 
-static void layout(arc_arena *ar, arc_numeric *num)
+static void layout(arc_arena *ar, void *owner)
 {
+    arc_numeric *num = owner;
     const arc_symbolic *s = num->sym;
     const size_t ns = (size_t)s->nsuper;
     num->lx = arc_arena_take(ar, (size_t)s->val_ptr[s->nsuper], sizeof(double));
@@ -31,14 +33,7 @@ int arc_numeric_create(const arc_symbolic *sym, arc_numeric *num)
     memset(num, 0, sizeof(*num));
     num->sym = sym;
     num->pivot_tolerance = DEFAULT_PIVOT_TOLERANCE;
-    arc_arena_measure(&num->arena);
-    layout(&num->arena, num);
-    if (arc_arena_commit(&num->arena) != 0)
-    {
-        return -1;
-    }
-    layout(&num->arena, num);
-    return 0;
+    return arc_arena_build(&num->arena, layout, num);
 }
 
 void arc_numeric_free(arc_numeric *num)
@@ -87,8 +82,10 @@ static void form_update(const arc_numeric *num, int d, update_rows u)
     arc_syrk_ln(u.n1, k, 1.0, l + u.p1, ld, 0.0, num->update, u.n2);
     if (u.n2 > u.n1)
     {
-        arc_gemm_nt(u.n2 - u.n1, u.n1, k, 1.0, l + u.p2, ld, l + u.p1, ld,
-                    0.0, num->update + u.n1, u.n2);
+        const arc_factor below = {l + u.p2, ld, ARC_PLAIN};
+        const arc_factor beside = {l + u.p1, ld, ARC_TRANSPOSED};
+        arc_gemm(u.n2 - u.n1, u.n1, k, 1.0, below, beside, 0.0,
+                 num->update + u.n1, u.n2);
     }
 }
 
@@ -137,10 +134,7 @@ static void pivot_floors(arc_numeric *num, const double *d)
 {
     const arc_csc *ap = &num->sym->a_perm;
     double *floor = num->pivot_floor;
-    for (int k = 0; k < ap->m; k++)
-    {
-        floor[k] = 0.0;
-    }
+    arc_zero(ap->m, floor);
     for (int j = 0; j < ap->n; j++)
     {
         for (int t = ap->p[j]; t < ap->p[j + 1]; t++)
@@ -151,6 +145,19 @@ static void pivot_floors(arc_numeric *num, const double *d)
     for (int k = 0; k < ap->m; k++)
     {
         floor[k] *= num->pivot_tolerance;
+    }
+}
+
+/* Adds tolerance * (P A D A' P')_kk to the diagonal of supernode s, which
+ * keeps the pivots of nearly dependent rows away from rounding errors. */
+static void regularize(const arc_numeric *num, int s, double *block)
+{
+    const arc_symbolic *sym = num->sym;
+    const long stride = arc_sn_rows(sym, s) + 1;
+    const double *floor = num->pivot_floor + sym->first[s];
+    for (int c = 0; c < arc_sn_cols(sym, s); c++)
+    {
+        block[c * stride] += floor[c];
     }
 }
 
@@ -167,6 +174,7 @@ static void factor_supernode(arc_numeric *num, int s, const double *d)
         num->map[rows[r]] = r;
     }
     arc_assemble_supernode(sym, s, d, num->map, block);
+    regularize(num, s, block);
     for (int dd = num->link_head[s], next; dd != -1; dd = next)
     {
         next = num->link_next[dd];

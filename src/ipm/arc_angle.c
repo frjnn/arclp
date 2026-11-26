@@ -23,10 +23,11 @@ static const double SMALLEST_ANGLE = 1e-300;
 static double reduce_for_mu(const arc_search_rule *r, const arc_ipm *ipm,
                             double alpha, double sigma)
 {
-    const int n = ipm->n;
-    const double a1 = arc_dot(n, r->dot.x, r->dot.s) / n;
-    const double a2 = (arc_dot(n, r->dot.x, r->q.s) + arc_dot(n, r->dot.s, r->q.x)) / n;
-    const double a3 = (arc_dot(n, r->dot.x, r->p.s) + arc_dot(n, r->dot.s, r->p.x)) / n;
+    const int n = ipm->n_total; /* free entries of s are 0 */
+    const int pairs = ipm->n_pairs;
+    const double a1 = arc_dot(n, r->dot.x, r->dot.s) / pairs;
+    const double a2 = (arc_dot(n, r->dot.x, r->q.s) + arc_dot(n, r->dot.s, r->q.x)) / pairs;
+    const double a3 = (arc_dot(n, r->dot.x, r->p.s) + arc_dot(n, r->dot.s, r->p.x)) / pairs;
     const double mu = ipm->mu;
     while (alpha > SMALLEST_ANGLE)
     {
@@ -45,8 +46,10 @@ static double reduce_for_mu(const arc_search_rule *r, const arc_ipm *ipm,
 
 arc_angle arc_search_angle(const arc_search_rule *r, const arc_ipm *ipm)
 {
-    const double phi = arc_fmin(RHO * arc_min(ipm->n, ipm->x), r->nu);
-    const double psi = arc_fmin(r->nu, RHO * arc_min(ipm->n, ipm->s));
+    const double phi = arc_fmin(RHO * arc_min(ipm->n_pairs, ipm->x + ipm->n_free),
+                                r->nu);
+    const double psi = arc_fmin(r->nu, RHO * arc_min(ipm->n_pairs,
+                                                       ipm->s + ipm->n_free));
     double lower = SIGMA_MIN;
     double upper = SIGMA_MAX;
     double sigma = lower;

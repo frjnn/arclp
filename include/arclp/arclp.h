@@ -1,7 +1,7 @@
 /*
  * arclp — arc-search infeasible interior-point method for linear programs
  *
- *     minimize c'x   subject to   A x = b,  x >= 0.
+ *     minimize c'x   subject to   A x = b,  lower <= x <= upper.
  *
  * C implementation of Y. Yang's arcLP (Numerical Algorithms 79, 2018,
  * Algorithm 5.1 with the step selection of Algorithm 6.1).  Mehrotra's
@@ -28,6 +28,8 @@ extern "C"
         const double *values; /* value of each nonzero                      */
         const double *b;      /* right-hand side, length m                  */
         const double *c;      /* objective, length n                        */
+        const double *lower;  /* bounds, length n, -INFINITY allowed; NULL   */
+        const double *upper;  /* means 0 for lower, +INFINITY for upper      */
     } arclp_problem;
 
     typedef enum
@@ -38,7 +40,9 @@ extern "C"
         ARCLP_MAX_ITERATIONS = 3,
         ARCLP_INVALID_INPUT = 4, /* malformed matrix or non-finite data   */
         ARCLP_OUT_OF_MEMORY = 5,
-        ARCLP_NUMERICAL_ERROR = 6 /* the iterates stopped being finite     */
+        ARCLP_NUMERICAL_ERROR = 6, /* the iterates stopped being finite    */
+        ARCLP_STALLED = 7 /* stopped improving short of the tolerance: x is
+                           * the best iterate, see the errors in info     */
     } arclp_status;
 
     typedef enum
@@ -70,6 +74,9 @@ extern "C"
         double seconds_analyse; /* ordering and symbolic factorization        */
         double seconds_iterate; /* interior-point iterations                  */
         double seconds_total;
+        double primal_error; /* relative errors of the returned iterate on  */
+        double dual_error;   /* the reduced problem; all are at most        */
+        double gap;          /* options.tolerance when status is optimal    */
     } arclp_info;
 
     ARCLP_API void arclp_default_options(arclp_options *options);

@@ -1,6 +1,7 @@
 #include "substitutions.h"
 
-#include <stdlib.h>
+#include "util/grow.h"
+
 #include <string.h>
 
 static int reserve_records(arc_substitutions *s)
@@ -9,23 +10,11 @@ static int reserve_records(arc_substitutions *s)
     {
         return 0;
     }
-    const int capacity = s->capacity > 0 ? 2 * s->capacity : 64;
-    int *pivot = realloc(s->pivot, sizeof(int) * (size_t)capacity);
-    if (pivot != NULL)
-    {
-        s->pivot = pivot;
-    }
-    double *rhs = realloc(s->rhs, sizeof(double) * (size_t)capacity);
-    if (rhs != NULL)
-    {
-        s->rhs = rhs;
-    }
-    int *start = realloc(s->start, sizeof(int) * (size_t)(capacity + 1));
-    if (start != NULL)
-    {
-        s->start = start;
-    }
-    if (pivot == NULL || rhs == NULL || start == NULL)
+    const int capacity = arc_grown_capacity(s->capacity, s->count + 1, 64);
+    const size_t n = (size_t)capacity;
+    if (arc_resize(&s->pivot, n, sizeof(int)) != 0
+        || arc_resize(&s->rhs, n, sizeof(double)) != 0
+        || arc_resize(&s->start, n + 1, sizeof(int)) != 0)
     {
         return -1;
     }
@@ -39,26 +28,15 @@ static int reserve_records(arc_substitutions *s)
 
 static int reserve_terms(arc_substitutions *s, int extra)
 {
-    if (s->terms + extra <= s->term_capacity)
+    const int needed = s->terms + extra;
+    if (needed <= s->term_capacity)
     {
         return 0;
     }
-    int capacity = s->term_capacity > 0 ? 2 * s->term_capacity : 256;
-    while (capacity < s->terms + extra)
-    {
-        capacity *= 2;
-    }
-    int *cols = realloc(s->term_col, sizeof(int) * (size_t)capacity);
-    if (cols != NULL)
-    {
-        s->term_col = cols;
-    }
-    double *coefs = realloc(s->term_coef, sizeof(double) * (size_t)capacity);
-    if (coefs != NULL)
-    {
-        s->term_coef = coefs;
-    }
-    if (cols == NULL || coefs == NULL)
+    const int capacity = arc_grown_capacity(s->term_capacity, needed, 256);
+    if (arc_resize(&s->term_col, (size_t)capacity, sizeof(int)) != 0
+        || arc_resize(&s->term_coef, (size_t)capacity,
+                      sizeof(double)) != 0)
     {
         return -1;
     }

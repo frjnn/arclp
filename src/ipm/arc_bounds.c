@@ -80,8 +80,9 @@ static arc_bounds parallel_bounds(const arc_search_rule *r,
         const long threads = omp_get_num_threads();
         const long t = omp_get_thread_num();
         arc_bounds part = {QUARTER, QUARTER, QUARTER};
-        scan(&part, r, ipm, sigma, phi, psi, (int)(ipm->n * t / threads),
-             (int)(ipm->n * (t + 1) / threads));
+        scan(&part, r, ipm, sigma, phi, psi,
+             ipm->n_free + (int)(ipm->n_pairs * t / threads),
+             ipm->n_free + (int)(ipm->n_pairs * (t + 1) / threads));
 #pragma omp critical(arc_bounds_merge)
         merge(&b, &part);
     }
@@ -93,12 +94,12 @@ arc_bounds arc_bounds_at(const arc_search_rule *r, const arc_ipm *ipm,
                          double sigma, double phi, double psi)
 {
 #if defined(ARCLP_USE_OPENMP)
-    if (16L * ipm->n >= ARC_PARALLEL_WORK)   /* ~16 units per component */
+    if (16L * ipm->n_pairs >= ARC_PARALLEL_WORK)   /* ~16 units per component */
     {
         return parallel_bounds(r, ipm, sigma, phi, psi);
     }
 #endif
     arc_bounds b = {QUARTER, QUARTER, QUARTER};
-    scan(&b, r, ipm, sigma, phi, psi, 0, ipm->n);
+    scan(&b, r, ipm, sigma, phi, psi, ipm->n_free, ipm->n_total);
     return b;
 }

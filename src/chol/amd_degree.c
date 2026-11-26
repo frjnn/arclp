@@ -1,5 +1,15 @@
 #include "amd_state.h"
 
+void amd_file_by_degree(amd_state *s, int i, int d)
+{
+    if (s->head[d] != -1)
+    {
+        s->last[s->head[d]] = i;
+    }
+    s->next[i] = s->head[d];
+    s->head[d] = i;
+}
+
 /* Scan 1: w[e] - mark becomes |Le \ Lk| for every element e adjacent to Lk. */
 void amd_set_differences(amd_state *s, const amd_pivot *e)
 {

@@ -5,7 +5,7 @@
 #include "check.h"
 
 #include <arclp/arclp.h>
-#include <arclp/mat5.h>
+#include <arclp/mat5_problem.h>
 
 #include <pthread.h>
 
@@ -46,16 +46,12 @@ static void *run(void *arg)
 
 static void check_problem(const char *dir, const char *name)
 {
-    char path[4096], err[256];
-    snprintf(path, sizeof(path), "%s/lp_%s.mat", dir, name);
     mat_lp m;
-    if (mat_lp_load(path, &m, err, sizeof(err)) != 0)
+    if (mat_lp_load_named(dir, name, &m) != 0)
     {
-        printf("  (skipping %s: %s)\n", name, err);
         return;
     }
-    const arclp_problem lp = {m.m, m.n, m.col_ptr, m.row_idx, m.values,
-                              m.b, m.c};
+    const arclp_problem lp = mat_lp_as_problem(&m);
     job jobs[THREADS];
     pthread_t threads[THREADS];
     for (int t = 0; t < THREADS; t++)

@@ -16,15 +16,20 @@ typedef struct
     size_t used;
 } arc_arena;
 
-/* Starts a measuring pass: arc_arena_take returns NULL and counts bytes. */
-void arc_arena_measure(arc_arena *arena);
+/* Takes every buffer of `owner` from the arena. */
+typedef void (*arc_arena_layout)(arc_arena *arena, void *owner);
 
-/* Allocates the measured number of bytes; returns 0 on success. */
-int arc_arena_commit(arc_arena *arena);
+/* Runs layout to measure, allocates, and runs it again to hand out the
+ * memory; returns 0 on success. */
+int arc_arena_build(arc_arena *arena, arc_arena_layout layout, void *owner);
 
-/* Returns `count` zero-initialized elements of `size` bytes, aligned to
+/* Called by layouts.  Returns `count` zero-initialized elements of `size` bytes, aligned to
  * a cache line.  Returns NULL while measuring. */
 void *arc_arena_take(arc_arena *arena, size_t count, size_t size);
+
+/* Hands out `count` vectors of `length` doubles. */
+void arc_arena_take_vectors(arc_arena *arena, double **const *vectors,
+                            size_t count, size_t length);
 
 void arc_arena_release(arc_arena *arena);
 

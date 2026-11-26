@@ -2,30 +2,33 @@
 #include "check.h"
 
 #include <arclp/arclp.h>
-#include <arclp/mat5.h>
+#include <arclp/mat5_problem.h>
+
+#include "small_lp.h"
 
 #include <string.h>
 
 static const arclp_method METHODS[] = {ARCLP_METHOD_ARC_SEARCH,
                                        ARCLP_METHOD_MEHROTRA};
 
-/* min -x1 - 2 x2  s.t.  x1 + x2 + s1 = 4,  x1 + 3 x2 + s2 = 6  ->  -5 */
+static arclp_options options(arclp_method method, int presolve)
+{
+    arclp_options o;
+    arclp_default_options(&o);
+    o.method = method;
+    o.presolve = presolve;
+    return o;
+}
+
 static void small_optimum(void)
 {
-    const int p[] = {0, 2, 4, 5, 6};
-    const int i[] = {0, 1, 0, 1, 0, 1};
-    const double v[] = {1, 1, 1, 3, 1, 1};
-    const double b[] = {4, 6};
-    const double c[] = {-1, -2, 0, 0};
-    const arclp_problem lp = {2, 4, p, i, v, b, c};
+    const arclp_problem lp = {SMALL_M, SMALL_N, SMALL_P, SMALL_I, SMALL_V,
+                              SMALL_B, SMALL_C, NULL, NULL};
     for (int presolve = 0; presolve <= 1; presolve++)
     {
         for (int k = 0; k < 2; k++)
         {
-            arclp_options o;
-            arclp_default_options(&o);
-            o.method = METHODS[k];
-            o.presolve = presolve;
+            const arclp_options o = options(METHODS[k], presolve);
             double x[4];
             arclp_info info;
             CHECK(arclp_solve(&lp, &o, x, &info) == ARCLP_OPTIMAL);
@@ -43,13 +46,10 @@ static void figure_two_example(void)
     const int p[] = {0, 1, 2};
     const int i[] = {0, 0};
     const double v[] = {1, 1}, b[] = {5}, c[] = {1, 0};
-    const arclp_problem lp = {1, 2, p, i, v, b, c};
+    const arclp_problem lp = {1, 2, p, i, v, b, c, NULL, NULL};
     for (int k = 0; k < 2; k++)
     {
-        arclp_options o;
-        arclp_default_options(&o);
-        o.method = METHODS[k];
-        o.presolve = 0;
+        const arclp_options o = options(METHODS[k], 0);
         double x[2];
         CHECK(arclp_solve(&lp, &o, x, NULL) == ARCLP_OPTIMAL);
         CHECK_NEAR(x[0], 0.0, 1e-7);
@@ -59,10 +59,7 @@ static void figure_two_example(void)
 
 static arclp_status solve_raw(const arclp_problem *lp, arclp_method method)
 {
-    arclp_options o;
-    arclp_default_options(&o);
-    o.method = method;
-    o.presolve = 0;
+    const arclp_options o = options(method, 0);
     double x[4];
     return arclp_solve(lp, &o, x, NULL);
 }
@@ -73,12 +70,12 @@ static void infeasible_and_unbounded(void)
     const int p1[] = {0, 2, 4};
     const int i1[] = {0, 1, 0, 1};
     const double v1[] = {1, 1, 1, 1}, b1[] = {1, 3}, c1[] = {1, 1};
-    const arclp_problem infeasible = {2, 2, p1, i1, v1, b1, c1};
+    const arclp_problem infeasible = {2, 2, p1, i1, v1, b1, c1, NULL, NULL};
     /* min -x1  s.t.  x1 - x2 = 1 */
     const int p2[] = {0, 1, 2};
     const int i2[] = {0, 0};
     const double v2[] = {1, -1}, b2[] = {1}, c2[] = {-1, 0};
-    const arclp_problem unbounded = {1, 2, p2, i2, v2, b2, c2};
+    const arclp_problem unbounded = {1, 2, p2, i2, v2, b2, c2, NULL, NULL};
     for (int k = 0; k < 2; k++)
     {
         CHECK(solve_raw(&infeasible, METHODS[k]) != ARCLP_OPTIMAL);
@@ -86,27 +83,22 @@ static void infeasible_and_unbounded(void)
     }
 }
 
-static void non_finite_input(void)
+/* A 1 x 1 problem with the given data is rejected. */
+static void rejects(int row, double value, double cost)
 {
     const int p[] = {0, 1};
-    const int i[] = {0};
-    const double v[] = {1}, b[] = {1}, c[] = {NAN};
-    const arclp_problem lp = {1, 1, p, i, v, b, c};
+    const double b[] = {1};
+    const arclp_problem lp = {1, 1, p, &row, &value, b, &cost, NULL, NULL};
     double x[1];
     CHECK(arclp_solve(&lp, NULL, x, NULL) == ARCLP_INVALID_INPUT);
-    const double vi[] = {INFINITY}, ci[] = {1};
-    const arclp_problem inf = {1, 1, p, i, vi, b, ci};
-    CHECK(arclp_solve(&inf, NULL, x, NULL) == ARCLP_INVALID_INPUT);
 }
 
 static void invalid_input(void)
 {
-    const int p[] = {0, 1};
-    const int i[] = {5};               /* row out of range */
-    const double v[] = {1}, b[] = {1}, c[] = {1};
-    const arclp_problem lp = {1, 1, p, i, v, b, c};
+    rejects(5, 1.0, 1.0);           /* row out of range */
+    rejects(0, INFINITY, 1.0);
+    rejects(0, 1.0, NAN);
     double x[1];
-    CHECK(arclp_solve(&lp, NULL, x, NULL) == ARCLP_INVALID_INPUT);
     CHECK(arclp_solve(NULL, NULL, x, NULL) == ARCLP_INVALID_INPUT);
 }
 
@@ -124,22 +116,16 @@ static void netlib(const char *dir)
         {"degen2", -1.435178000000e+03}, {"scagr7", -2.331389824331e+06}};
     for (size_t t = 0; t < sizeof(cases) / sizeof(*cases); t++)
     {
-        char path[4096], err[256];
-        snprintf(path, sizeof(path), "%s/lp_%s.mat", dir, cases[t].name);
         mat_lp m;
-        if (mat_lp_load(path, &m, err, sizeof(err)) != 0)
+        if (mat_lp_load_named(dir, cases[t].name, &m) != 0)
         {
-            printf("  (skipping %s: %s)\n", cases[t].name, err);
             continue;
         }
-        const arclp_problem lp = {m.m, m.n, m.col_ptr, m.row_idx, m.values,
-                                  m.b, m.c};
+        const arclp_problem lp = mat_lp_as_problem(&m);
         double *x = malloc(sizeof(double) * (size_t)m.n);
         for (int k = 0; k < 2; k++)
         {
-            arclp_options o;
-            arclp_default_options(&o);
-            o.method = METHODS[k];
+            const arclp_options o = options(METHODS[k], 1);
             arclp_info info;
             CHECK(arclp_solve(&lp, &o, x, &info) == ARCLP_OPTIMAL);
             const double ref = cases[t].objective;
@@ -156,7 +142,6 @@ int main(void)
     figure_two_example();
     infeasible_and_unbounded();
     invalid_input();
-    non_finite_input();
     const char *dir = getenv("NETLIB_DIR");
     netlib(dir != NULL ? dir : "data/arcLP");
     return check_report("solver end to end");

@@ -29,6 +29,16 @@ static inline double arc_norm1(int n, const double *x)
     return sum;
 }
 
+static inline double arc_max_abs(int n, const double *x)
+{
+    double largest = 0.0;
+    for (int i = 0; i < n; i++)
+    {
+        largest = fabs(x[i]) > largest ? fabs(x[i]) : largest;
+    }
+    return largest;
+}
+
 static inline double arc_min(int n, const double *x)
 {
     double lowest = INFINITY;
@@ -54,6 +64,32 @@ static inline void arc_copy(int n, const double *x, double *y)
     for (int i = 0; i < n; i++)
     {
         y[i] = x[i];
+    }
+}
+
+static inline void arc_zero(int n, double *x)
+{
+    for (int i = 0; i < n; i++)
+    {
+        x[i] = 0.0;
+    }
+}
+
+/* x := -x */
+static inline void arc_negate(int n, double *x)
+{
+    for (int i = 0; i < n; i++)
+    {
+        x[i] = -x[i];
+    }
+}
+
+/* y := y + s x */
+static inline void arc_axpy(int n, double s, const double *x, double *y)
+{
+    for (int i = 0; i < n; i++)
+    {
+        y[i] += s * x[i];
     }
 }
 

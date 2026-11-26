@@ -32,9 +32,18 @@ static int scratch_open(scratch *t, int m, int n)
     return 0;
 }
 
-static void layout(arc_arena *ar, arc_symbolic *s, const arc_csc *a,
-                   long total_rows)
+typedef struct
 {
+    arc_symbolic *sym;
+    const arc_csc *a;
+    long total_rows;
+} storage;
+
+static void layout(arc_arena *ar, void *owner)
+{
+    const storage *k = owner;
+    arc_symbolic *s = k->sym;
+    const arc_csc *a = k->a;
     const size_t m = (size_t)a->m;
     const size_t nnz = (size_t)a->p[a->n];
     const size_t ns = (size_t)s->nsuper;
@@ -43,7 +52,7 @@ static void layout(arc_arena *ar, arc_symbolic *s, const arc_csc *a,
     s->first = arc_arena_take(ar, ns + 1, sizeof(int));
     s->owner = arc_arena_take(ar, m, sizeof(int));
     s->row_ptr = arc_arena_take(ar, ns + 1, sizeof(int));
-    s->rows = arc_arena_take(ar, (size_t)total_rows, sizeof(int));
+    s->rows = arc_arena_take(ar, (size_t)k->total_rows, sizeof(int));
     s->val_ptr = arc_arena_take(ar, ns + 1, sizeof(long));
     s->ap_p = arc_arena_take(ar, (size_t)a->n + 1, sizeof(int));
     s->ap_i = arc_arena_take(ar, nnz, sizeof(int));
@@ -57,18 +66,15 @@ static void layout(arc_arena *ar, arc_symbolic *s, const arc_csc *a,
 
 static int allocate(arc_symbolic *s, const arc_csc *a, const scratch *t)
 {
-    long total_rows = 0;
-    for (int k = 0; k < s->nsuper; k++)
+    storage k = {s, a, 0};
+    for (int f = 0; f < s->nsuper; f++)
     {
-        total_rows += t->srows[k];
+        k.total_rows += t->srows[f];
     }
-    arc_arena_measure(&s->arena);
-    layout(&s->arena, s, a, total_rows);
-    if (arc_arena_commit(&s->arena) != 0)
+    if (arc_arena_build(&s->arena, layout, &k) != 0)
     {
         return -1;
     }
-    layout(&s->arena, s, a, total_rows);
     memcpy(s->perm, t->perm, sizeof(int) * (size_t)s->m);
     memcpy(s->pinv, t->pinv, sizeof(int) * (size_t)s->m);
     memcpy(s->first, t->first, sizeof(int) * (size_t)(s->nsuper + 1));

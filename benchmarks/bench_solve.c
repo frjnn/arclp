@@ -1,5 +1,7 @@
 #include "bench.h"
 
+#include <arclp/mat5_problem.h>
+
 #include <math.h>
 #include <stdlib.h>
 
@@ -8,8 +10,7 @@ static const double SOLVED_ERROR = 1e-6;
 int bench_solve(const mat_lp *lp, arclp_method method, int repeat,
                 double reference, bench_result *out)
 {
-    const arclp_problem problem = {lp->m, lp->n, lp->col_ptr, lp->row_idx,
-                                   lp->values, lp->b, lp->c};
+    const arclp_problem problem = mat_lp_as_problem(lp);
     arclp_options options;
     arclp_default_options(&options);
     options.method = method;

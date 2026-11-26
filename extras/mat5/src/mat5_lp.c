@@ -126,3 +126,15 @@ void mat_lp_free(mat_lp *lp)
     free(lp->c);
     memset(lp, 0, sizeof(*lp));
 }
+
+int mat_lp_load_named(const char *dir, const char *name, mat_lp *lp)
+{
+    char path[4096], err[256];
+    snprintf(path, sizeof(path), "%s/lp_%s.mat", dir, name);
+    const int status = mat_lp_load(path, lp, err, sizeof(err));
+    if (status != 0)
+    {
+        fprintf(stderr, "skipping %s: %s\n", name, err);
+    }
+    return status;
+}
