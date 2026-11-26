@@ -57,9 +57,10 @@ static arclp_status status_of(arc_ipm_outcome outcome)
     case ARC_IPM_UNBOUNDED: return ARCLP_UNBOUNDED;
     case ARC_IPM_STALLED: return ARCLP_STALLED;
     case ARC_IPM_ITERATION_LIMIT: return ARCLP_MAX_ITERATIONS;
-    case ARC_IPM_NUMERICAL_ERROR: return ARCLP_NUMERICAL_ERROR;
-    default: return ARCLP_OUT_OF_MEMORY;
+    case ARC_IPM_NUMERICAL_ERROR:
+    case ARC_IPM_FACTOR_FAILED: return ARCLP_NUMERICAL_ERROR;
     }
+    return ARCLP_NUMERICAL_ERROR;
 }
 
 static arclp_status iterate(arc_ipm *ipm, arc_step_rule *rule,

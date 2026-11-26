@@ -35,7 +35,7 @@ static void move(int len, double *v, const double *dot, const double *p,
     }
 }
 
-static int arc_step(arc_step_rule *self, arc_ipm *ipm)
+static void arc_step(arc_step_rule *self, arc_ipm *ipm)
 {
     arc_search_rule *r = (arc_search_rule *)self;
     arc_search_directions(r, ipm);
@@ -45,8 +45,6 @@ static int arc_step(arc_step_rule *self, arc_ipm *ipm)
     move(ipm->n_total, ipm->x, r->dot.x, r->p.x, r->q.x, a);
     r->nu *= 1.0 - sin(a.alpha);
     r->alpha = a.alpha;
-    r->sigma = a.sigma;
-    return 0;
 }
 
 static int arc_stalled(const arc_step_rule *self, const arc_ipm *ipm)

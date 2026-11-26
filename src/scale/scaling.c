@@ -59,35 +59,15 @@ static void layout(arc_arena *ar, void *owner)
     arc_arena_take_vectors(ar, by_col, 3, (size_t)s->n);
 }
 
-int arc_scale_problem(arc_lp *lp, arc_scaling *s)
+/* b, c and the bounds follow the scaled matrix; units undo the scaling. */
+static void scale_vectors(arc_lp *lp, arc_scaling *s)
 {
-    const arc_csc *a = &lp->a;
-    const size_t m = (size_t)a->m;
-    const size_t n = (size_t)a->n;
-    s->m = a->m;
-    s->n = a->n;
-    if (arc_arena_build(&s->arena, layout, s) != 0)
-    {
-        return -1;
-    }
-    for (size_t i = 0; i < m; i++)
-    {
-        s->row[i] = 1.0;
-    }
-    for (size_t j = 0; j < n; j++)
-    {
-        s->col[j] = 1.0;
-    }
-    for (int pass = 0; pass < PASSES; pass++)
-    {
-        equilibrate(a, lp->values, s);
-    }
-    for (size_t i = 0; i < m; i++)
+    for (int i = 0; i < s->m; i++)
     {
         lp->b[i] *= s->row[i];
         s->row_unit[i] = 1.0 / s->row[i];
     }
-    for (size_t j = 0; j < n; j++)
+    for (int j = 0; j < s->n; j++)
     {
         lp->c[j] *= s->col[j];
         s->col_unit[j] = 1.0 / s->col[j];
@@ -97,6 +77,29 @@ int arc_scale_problem(arc_lp *lp, arc_scaling *s)
     {
         lp->upper[k] *= s->col_unit[first + k];
     }
+}
+
+int arc_scale_problem(arc_lp *lp, arc_scaling *s)
+{
+    s->m = lp->a.m;
+    s->n = lp->a.n;
+    if (arc_arena_build(&s->arena, layout, s) != 0)
+    {
+        return -1;
+    }
+    for (int i = 0; i < s->m; i++)
+    {
+        s->row[i] = 1.0;
+    }
+    for (int j = 0; j < s->n; j++)
+    {
+        s->col[j] = 1.0;
+    }
+    for (int pass = 0; pass < PASSES; pass++)
+    {
+        equilibrate(&lp->a, lp->values, s);
+    }
+    scale_vectors(lp, s);
     return 0;
 }
 

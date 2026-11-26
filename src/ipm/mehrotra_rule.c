@@ -31,7 +31,7 @@ static void move(int len, double *v, const double *d, const double *dd,
     }
 }
 
-static int mehrotra_step(arc_step_rule *self, arc_ipm *ipm)
+static void mehrotra_step(arc_step_rule *self, arc_ipm *ipm)
 {
     mehrotra_rule *r = (mehrotra_rule *)self;
     mehrotra_affine(r, ipm);
@@ -46,7 +46,6 @@ static int mehrotra_step(arc_step_rule *self, arc_ipm *ipm)
     move(ipm->n_total, ipm->s, r->ds, r->dds, r->step_s);
     move(ipm->m, ipm->y, r->dy, r->ddy, r->step_s);
     r->iteration++;
-    return 0;
 }
 
 static int mehrotra_stalled(const arc_step_rule *self, const arc_ipm *ipm)

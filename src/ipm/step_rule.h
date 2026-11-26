@@ -12,8 +12,8 @@ typedef struct arc_step_rule arc_step_rule;
 
 typedef struct
 {
-    /* Replaces (x, y, s) by the next iterate; returns 0 on success. */
-    int (*step)(arc_step_rule *self, arc_ipm *ipm);
+    /* Replaces (x, y, s) by the next iterate. */
+    void (*step)(arc_step_rule *self, arc_ipm *ipm);
     /* Rule-specific stagnation test, evaluated after the residual update. */
     int (*stalled)(const arc_step_rule *self, const arc_ipm *ipm);
     /* Takes the rule's vectors from the arena; owner is the rule. */

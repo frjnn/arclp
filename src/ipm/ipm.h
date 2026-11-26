@@ -58,7 +58,7 @@ typedef enum
     ARC_IPM_STALLED, /* stopped improving short of the tolerance */
     ARC_IPM_ITERATION_LIMIT,
     ARC_IPM_NUMERICAL_ERROR,
-    ARC_IPM_FAILURE
+    ARC_IPM_FACTOR_FAILED /* the normal equations could not be factorized */
 } arc_ipm_outcome;
 
 typedef struct

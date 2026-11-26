@@ -17,11 +17,10 @@ typedef struct
     int steps;
 } poison_rule;
 
-static int poison_step(arc_step_rule *self, arc_ipm *ipm)
+static void poison_step(arc_step_rule *self, arc_ipm *ipm)
 {
     ((poison_rule *)self)->steps++;
     ipm->x[0] = NAN;
-    return 0;
 }
 
 static int never_stalls(const arc_step_rule *self, const arc_ipm *ipm)
@@ -44,12 +43,11 @@ static void scale(int n, double factor, double *v)
 
 /* Shrinks x and y alike: mu falls by a fifth per step, and so do both
  * objectives. */
-static int shrink_step(arc_step_rule *self, arc_ipm *ipm)
+static void shrink_step(arc_step_rule *self, arc_ipm *ipm)
 {
     (void)self;
     scale(ipm->n_total, 0.8, ipm->x);
     scale(ipm->m, 0.8, ipm->y);
-    return 0;
 }
 
 static const arc_step_rule_ops SHRINK = {shrink_step, never_stalls, NULL,

@@ -104,10 +104,11 @@ static arc_ipm_outcome iterate(arc_ipm *ipm, arc_step_rule *rule,
         {
             return ARC_IPM_ITERATION_LIMIT;
         }
-        if (prepare_scaling(ipm) != 0 || rule->ops->step(rule, ipm) != 0)
+        if (prepare_scaling(ipm) != 0)
         {
-            return ARC_IPM_FAILURE;
+            return ARC_IPM_FACTOR_FAILED;
         }
+        rule->ops->step(rule, ipm);
         (*iterations)++;
         arc_ipm_residuals(ipm);
         now = arc_ipm_measure(ipm);
@@ -135,7 +136,7 @@ static arc_ipm_outcome iterate(arc_ipm *ipm, arc_step_rule *rule,
 arc_ipm_result arc_ipm_run(arc_ipm *ipm, arc_step_rule *rule,
                            const arc_ipm_settings *settings)
 {
-    arc_ipm_result result = {ARC_IPM_FAILURE, 0, {0.0, 0.0, 0.0}};
+    arc_ipm_result result = {ARC_IPM_FACTOR_FAILED, 0, {0.0, 0.0, 0.0}};
     result.outcome = iterate(ipm, rule, settings, &result.iterations);
     if (result.outcome != ARC_IPM_CONVERGED)
     {

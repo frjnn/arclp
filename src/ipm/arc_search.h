@@ -26,7 +26,6 @@ typedef struct
     double *target;     /* complementarity targets, all pairs     */
     double nu;          /* nu_k = prod (1 - sin alpha_j)          */
     double alpha;       /* last accepted angle                    */
-    double sigma;
 } arc_search_rule;
 
 typedef struct
