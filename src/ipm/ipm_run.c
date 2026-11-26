@@ -29,7 +29,8 @@ static void trace(const arc_ipm *ipm, int k, arc_ipm_errors e)
 /* Progress means that the primal residual, the dual residual or mu falls
  * clearly; amounts below the tolerance no longer count.  They are tracked
  * one by one, because the largest of them can stand still while the others
- * converge. */
+ * converge.  mu counts as it is: relative to the objective it rises while
+ * an objective passes near zero, even as mu falls. */
 enum
 {
     MEASURES = 3
@@ -47,8 +48,9 @@ typedef struct
 static int no_progress(progress *p, arc_ipm *ipm, arc_ipm_errors now,
                        double tolerance)
 {
-    const double measures[MEASURES] = {now.primal, now.dual,
-                                       arc_ipm_complementarity(ipm)};
+    const double measures[MEASURES] = {now.primal, now.dual, ipm->mu};
+    const double floors[MEASURES] = {tolerance, tolerance,
+                                     arc_ipm_mu_floor(ipm, tolerance)};
     const double error = arc_ipm_worst(now);
     if (error < p->best)
     {
@@ -58,7 +60,7 @@ static int no_progress(progress *p, arc_ipm *ipm, arc_ipm_errors now,
     p->waited++;
     for (int k = 0; k < MEASURES; k++)
     {
-        if (arc_fmax(measures[k], tolerance) < PROGRESS * p->reference[k])
+        if (arc_fmax(measures[k], floors[k]) < PROGRESS * p->reference[k])
         {
             p->reference[k] = measures[k];
             p->waited = 0;

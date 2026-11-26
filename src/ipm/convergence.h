@@ -26,9 +26,9 @@ static inline double arc_ipm_worst(arc_ipm_errors e)
     return residual > e.gap ? residual : e.gap;
 }
 
-/* Complementarity x's + w'z relative to the objective: unlike the duality
- * gap, it cannot pass through zero far from the optimum. */
-double arc_ipm_complementarity(const arc_ipm *ipm);
+/* The mu below which the complementarity x's + w'z, relative to the
+ * objective, meets the tolerance. */
+double arc_ipm_mu_floor(const arc_ipm *ipm, double tolerance);
 
 /* ARC_IPM_PRIMAL_INFEASIBLE or ARC_IPM_UNBOUNDED when the iterate proves
  * it, ARC_IPM_STALLED when it proves nothing. */

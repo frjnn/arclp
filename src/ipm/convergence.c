@@ -59,11 +59,15 @@ arc_ipm_errors arc_ipm_measure(const arc_ipm *ipm)
     return e;
 }
 
-double arc_ipm_complementarity(const arc_ipm *ipm)
+double arc_ipm_mu_floor(const arc_ipm *ipm, double tolerance)
 {
+    if (ipm->n_pairs == 0)
+    {
+        return INFINITY;
+    }
     const arc_ipm_objectives o = arc_ipm_objective(ipm);
-    return ipm->mu * ipm->n_pairs
-         / (1.0 + arc_fmin(fabs(o.primal), fabs(o.dual)));
+    return tolerance * (1.0 + arc_fmin(fabs(o.primal), fabs(o.dual)))
+         / ipm->n_pairs;
 }
 
 static double norm_of_sum(int len, const double *u, const double *v)

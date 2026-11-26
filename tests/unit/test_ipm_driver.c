@@ -1,6 +1,6 @@
-/* The start point, and the driver against a fake step rule: a rule that
- * produces non-finite iterates must end in a numerical error, never in
- * "converged". */
+/* The start point, and the driver against fake step rules: non-finite
+ * iterates must end in a numerical error, never in "converged", and a
+ * falling mu must not be taken for a stall. */
 #include "check.h"
 
 #include "chol/chol_solver.h"
@@ -33,6 +33,27 @@ static int never_stalls(const arc_step_rule *self, const arc_ipm *ipm)
 
 static const arc_step_rule_ops POISON = {poison_step, never_stalls, NULL,
                                          NULL, 1.0, sizeof(poison_rule)};
+
+static void scale(int n, double factor, double *v)
+{
+    for (int i = 0; i < n; i++)
+    {
+        v[i] *= factor;
+    }
+}
+
+/* Shrinks x and y alike: mu falls by a fifth per step, and so do both
+ * objectives. */
+static int shrink_step(arc_step_rule *self, arc_ipm *ipm)
+{
+    (void)self;
+    scale(ipm->n_total, 0.8, ipm->x);
+    scale(ipm->m, 0.8, ipm->y);
+    return 0;
+}
+
+static const arc_step_rule_ops SHRINK = {shrink_step, never_stalls, NULL,
+                                         NULL, 1.0, sizeof(arc_step_rule)};
 
 /* The small problem with given b and c, at its start point.  The iteration
  * and the solver keep pointers into lp. */
@@ -73,6 +94,19 @@ static void poisoned_iterates_are_errors(double *b, double *c)
     stop(&f);
 }
 
+/* A falling mu is progress even when the objectives fall as fast, which
+ * keeps mu relative to them constant. */
+static void falling_mu_is_progress(double *b, double *c)
+{
+    fixture f;
+    start(&f, b, c);
+    arc_step_rule rule = {&SHRINK, 0, 0, {0}};
+    const arc_ipm_settings settings = {1e-8, 40, 0};
+    const arc_ipm_result r = arc_ipm_run(&f.ipm, &rule, &settings);
+    CHECK(r.outcome == ARC_IPM_ITERATION_LIMIT);
+    stop(&f);
+}
+
 /* Neither a zero b nor a constant cost may start on the boundary. */
 static void start_is_interior(double *b, double *c)
 {
@@ -91,6 +125,12 @@ int main(void)
     memcpy(b, SMALL_B, sizeof(b));
     memcpy(c, SMALL_C, sizeof(c));
     poisoned_iterates_are_errors(b, c);
+    double big_b[SMALL_M], big_c[SMALL_N];   /* objectives far above 1 */
+    memcpy(big_b, SMALL_B, sizeof(big_b));
+    memcpy(big_c, SMALL_C, sizeof(big_c));
+    scale(SMALL_M, 1e6, big_b);
+    scale(SMALL_N, 1e6, big_c);
+    falling_mu_is_progress(big_b, big_c);
     start_is_interior(zero, c);
     start_is_interior(b, constant);
     start_is_interior(b, zero);
