@@ -101,12 +101,16 @@ On the 51 Netlib problems of Table 1 from Yang 2018 (Apple M2 Max):
 
 | | solved (rel. obj. error < 1e-6) | iterations (paper) | time |
 |---|---|---|---|
-| arcLP | 46/51, other 5 within 6e-6 | 1077 (1064) | 5.9 s |
-| Mehrotra | 47/51 | 1073 (1099) | 5.6 s |
+| arcLP | 48/51, `scfxm1–3` stall within 3e-7 | 987 (1064) | 5.2 s |
+| Mehrotra | 50/51, `scfxm1` stalls within 5e-7 | 913 (1099) | 4.7 s |
 
-(with METIS and OpenMP; without them 7.6 s and 6.8 s)
+(with METIS and OpenMP; without them 6.8 s and 5.8 s)
 
-Full table: [BENCHMARKS.md](BENCHMARKS.md).
+On the 29 Netlib infeasible problems arcLP proves 24 infeasible and Mehrotra
+25. On the 49 large instances of Mittelmann's LPfeas benchmark arcLP solves 32
+within 900 s and 64 GB.
+
+Full tables: [BENCHMARKS.md](BENCHMARKS.md).
 
 ## Differences from `arcLP.m`
 
